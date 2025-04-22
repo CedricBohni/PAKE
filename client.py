@@ -1,9 +1,45 @@
-from crypto_utils import mod_exp, SAFE_PRIME, prg
+import json
+import socket
 
-class Client:
-    def __init__(self, pw_bits):
-        self.pw_bits = pw_bits
+HOST = '127.0.0.1'
+PORT = 65432
 
-    def receive(self, file_blocks, k_prime):
-        self.file_blocks = file_blocks
-        self.k_prime = k_prime
+# Client that sends the registration data to the server in a json format
+def send_registration():
+    print("=== User Registration ===")
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+
+    registration_data = {
+        "username": username,
+        "password": password
+    }
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((HOST, PORT))
+        payload = json.dumps(registration_data)
+        s.sendall(payload.encode())
+        response = s.recv(1024).decode()
+        print(f"\nServer response: {response}")
+
+def send_authentication():
+    print("=== User Authentication ===")
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+
+    auth_data = {
+        "username": username,
+        "password": password
+    }
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((HOST, PORT))
+        payload = json.dumps(auth_data)
+        s.sendall(payload.encode())
+        response = s.recv(1024).decode()
+        print(f"\nServer response: {response}")
+
+if __name__ == '__main__':
+    send_registration()
+    print("registration complete")
+    send_authentication()

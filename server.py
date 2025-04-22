@@ -1,30 +1,73 @@
-from crypto_utils import random_scalar, mod_exp, GENERATOR, SAFE_PRIME, prg
-from shamir_rss import shamir_share
+import json
+import socket
 
-class Server:
-    def __init__(self, pw_bits):
-        self.pw_bits = pw_bits
+HOST = '127.0.0.1'
+PORT = 65432
+def generate_session_key(username):
+    # This is a placeholder for session key generation logic
+    # In a real-world application, you would use a secure method to generate a session key
+    return f"session_key_for_{username}"
 
-    def prepare(self):
-        n =len(self.pw_bits)
-        t = 2
-        k = random_scalar()
-        shares = shamir_share(k, n, t, SAFE_PRIME)
-        self.k = k
-        self.k_prime = random_scalar()
-        self.K = mod_exp(GENERATOR, k)
-        self.file_blocks = []
+def save_registration(username, password):
+    # create a sessionKey for the user
+    sessionKey = generate_session_key(username)
+    # using shamri secret sharing to split the sessionkey into n(password as bits) many shares and save them as a json file
 
-        for i, bit in enumerate(self.pw_bits):
-            r = random_scalar()
-            a0 = mod_exp(GENERATOR, r)
-            a1 = mod_exp(GENERATOR, shares[i][1])
-            if bit == 0:
-                self.file_blocks.append((a1, a0))
-            else:
-                self.file_blocks.append((a0, a1))
 
-        gk = mod_exp(GENERATOR, k)
-        K_prime = mod_exp(GENERATOR, self.k_prime)
-        self.shared_key = prg(K_prime)
-        return self.shared_key, self.file_blocks, self.k_prime
+def registration():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        print(f"Server listening on {HOST}:{PORT} for registration")
+        conn, addr = s.accept()
+        with conn:
+            print('Connected by', addr)
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                print("Received:", data.decode())
+                try:
+                    registration_data = json.loads(data.decode())
+                    username = registration_data.get("username")
+                    password = registration_data.get("password")
+                    if username and password:
+                        save_registration(username, password)
+                        response = "Registration successful"
+                    else:
+                        response = "Invalid data"
+                except json.JSONDecodeError:
+                    response = "Invalid JSON format"
+                conn.sendall(data)
+
+def password_authentication():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        print(f"Server listening on {HOST}:{PORT} for password authentication")
+        conn, addr = s.accept()
+        with conn:
+            print('Connected by', addr)
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                print("Received:", data.decode())
+                try:
+                    auth_data = json.loads(data.decode())
+                    username = auth_data.get("username")
+                    password = auth_data.get("password")
+                    with open(f"{username}_password.txt", "r") as f:
+                        stored_password = f.read()
+                    if password == stored_password:
+                        response = "Authentication successful"
+                    else:
+                        response = "Authentication failed"
+                except json.JSONDecodeError:
+                    response = "Invalid JSON format"
+                conn.sendall(response.encode())
+
+if __name__ == "__main__":
+    registration()
+    print("registration complete")
+    password_authentication()
