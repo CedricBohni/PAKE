@@ -13,3 +13,9 @@ The protocol consists of two main phases:
 ## Key Exchange
 
 ## Explicit Authentication
+
+
+TODOs
+- connect RSS
+- all in exponent
+- randomize
