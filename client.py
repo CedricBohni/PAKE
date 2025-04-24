@@ -43,12 +43,11 @@ def send_authentication():
         response = s.recv(1024).decode()
         print(f"\nServer response: {response}")
 
-    mpc.run(receiver_ot(password))
+    shares = mpc.run(receiver_ot(password))
 
     # reconstrcut session_key with shares
 
-    session_key = 0
-    print (f"Session key: {session_key}")
+    print (f"Shares: {shares}")
 
 if __name__ == '__main__':
     while True:

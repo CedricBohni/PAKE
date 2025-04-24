@@ -4,41 +4,35 @@ from utils import string_to_bitstring
 import os
 from ot_protocol import sender_ot
 from mpyc.runtime import mpc
-from crypto_utils import create_shares, random_share
+from crypto_utils import create_shares, random_int, in_exponent, add_mod
 
 HOST = '127.0.0.1'
 PORT = 65433
 
 def registration(username, password):
     bit_password = string_to_bitstring(password)
-    n = len(bit_password)
-    session_key = os.urandom(32).hex()
 
-    print(f"Password: {password}")
-    print(f"Password in bits: {bit_password}")
-    print(f"Session key: {session_key}")
+    print(f"bit_password: {bit_password}")
 
     n = len(bit_password)
-    t = n - 2*8
-    print(f"Number of shares: {n}")
-    print(f"Threshold: {t}")
-    # create real shares from the session_key and random_secret
-    session_key_shares = create_shares(int(session_key, 16), n, t)
-    random_secret_shares = [random_share() for i in range(1, n + 1)]
+    t = n - 2*8 - 1 # -1 necessary for the reed solomon codes to work
+    k = random_int()
 
-    array_0 = [None]*n
-    array_1 = [None]*n
+    exp_k = in_exponent(k)
+    exp_p = in_exponent(int(string_to_bitstring(password), 2))
+
+    session_key_shares = create_shares(k, n, t)
+
+    shares = [None]*n
 
     for i, bit in enumerate(bit_password):
         if bit == '1':
-            array_1[i] = session_key_shares[i]
-            array_0[i] = random_secret_shares[i]
+            shares[i] = (in_exponent(random_int()), in_exponent(session_key_shares[i]))
         else:
-            array_0[i] = session_key_shares[i]
-            array_1[i] = random_secret_shares[i]
+            shares[i] = (in_exponent(session_key_shares[i]), in_exponent(random_int()))
 
     with open(f"{username}_file.json", "w") as f:
-        json.dump({"session_key": session_key, "array_0": array_0, "array_1": array_1}, f)
+        json.dump({"shares": shares, "P": exp_p, "K": exp_k}, f)
 
     print(f"Shares saved for user {username}")
 
@@ -71,16 +65,27 @@ def set_up():
                                 with open(f"{username}_file.json", "r") as f:
                                     file = json.load(f)
 
-                                array_0 = file["array_0"]
-                                array_1 = file["array_1"]
+                                shares = file["shares"]
+                                exp_K = file["K"]
+                                exp_P = file["P"]
+                                # TODO: randomize pw_file
 
-                                # randomize the shares for every session
-                                # create new session key
+                                k_prime = random_int()
+                                exp_K = add_mod(in_exponent(k_prime), exp_K)
+                                n = len(shares)
+                                t = n - 2 * 8 - 1
+                                random_shares = create_shares(k_prime, n, t)
+                                for i in range(n):
+                                    r = in_exponent(random_shares[i])
+                                    shares[i] = (add_mod(shares[i][0], r), add_mod(shares[i][1], r))
 
-                                response = "OT ready"
+                                # TODO: encrypt with new K (new shares and P) -> c
+                                # send the c to the client
+                                response = "This is a placeholder for the encrypted data"
                                 conn.sendall(response.encode())
 
-                                mpc.run(sender_ot(array_0, array_1))
+                                # run OT
+                                mpc.run(sender_ot(shares))
 
                             except FileNotFoundError:
                                 response = "User not found"

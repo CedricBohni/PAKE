@@ -3,10 +3,23 @@ from sympy import symbols, mod_inverse
 import itertools
 from collections import Counter
 
-PRIME = 2**127 - 1
+p_hex = """
+FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22
+514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6
+F44C42E9A63A3620FFFFFFFFFFFFFFFF
+""".replace("\n", "").replace(" ", "")
 
-def random_share():
+PRIME = int(p_hex, 16)
+g = 2
+
+def random_int():
     return random.randint(0, PRIME - 1)
+
+def add_mod(a, b):
+    return (a + b) % PRIME
+
+def in_exponent(value):
+    return pow(g, value, PRIME)
 
 def generate_polynomial(secret, t):
     return [secret] + [random.randint(0, PRIME - 1) for _ in range(t - 1)]
@@ -76,20 +89,4 @@ if __name__ == "__main__":
     print("Reconstructed Secret:", reconstructed_secret1, reconstructed_secret2, reconstructed_secret3, reconstructed_secret4, reconstructed_secret5)
 
 
-# Reed-Solomon parameters
-# need n > t + 2e (t = threshold, e = tolerated errors)
-# if we say each password can have maximum of one wrong letter and each share represents a bit
-# a letter is 8 bits so we tolerate 8 errors
-# we want at least 6 correct letters which is t = 6* 8 = 48
-# so we need n > 48 + 2*8 = 64 => we need at least 65 shares => 7 letters
-# approach:
-
-# Share creation
-# 1. choose random polynomial of degree t - 1 f(0) = s
-# 2. create n many shares of (x, f(x))
-#
-# reconstruction
-# 1. choose t + 2e shares
-# 2. use Berlekamp-Welch algorithm to reconstruct the polynomial
-# 3. evaluate the polynomial at x = 0 to get the secret
 
