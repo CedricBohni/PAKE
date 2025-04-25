@@ -19,3 +19,8 @@ TODOs
 - connect RSS
 - all in exponent
 - randomize
+
+run these three at the same time:
+- `python server.py -M 3 -I 1`
+- `python client.py -M 3 -I 2`
+- `python ot_protocol.py -M 3 -I 0`

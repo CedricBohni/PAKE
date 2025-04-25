@@ -4,7 +4,8 @@ from utils import string_to_bitstring
 import os
 from ot_protocol import sender_ot
 from mpyc.runtime import mpc
-from crypto_utils import create_shares, random_int, in_exponent, add_mod
+from crypto_utils import create_shares, random_int, in_exponent, add_mod, encrypt
+import time
 
 HOST = '127.0.0.1'
 PORT = 65433
@@ -21,18 +22,28 @@ def registration(username, password):
     exp_k = in_exponent(k)
     exp_p = in_exponent(int(string_to_bitstring(password), 2))
 
-    session_key_shares = create_shares(k, n, t)
+    key_shares = create_shares(k, n, t)
 
     shares = [None]*n
 
+    # TODO: make it in the exponent
+    # for i, bit in enumerate(bit_password):
+    #     if bit == '1':
+    #         shares[i] = (in_exponent(random_int()), in_exponent(key_shares[i]))
+    #     else:
+    #         shares[i] = (in_exponent(key_shares[i]), in_exponent(random_int()))
+
     for i, bit in enumerate(bit_password):
         if bit == '1':
-            shares[i] = (in_exponent(random_int()), in_exponent(session_key_shares[i]))
+            shares[i] = (random_int(), key_shares[i])
         else:
-            shares[i] = (in_exponent(session_key_shares[i]), in_exponent(random_int()))
+            shares[i] = (key_shares[i], random_int())
 
     with open(f"{username}_file.json", "w") as f:
-        json.dump({"shares": shares, "P": exp_p, "K": exp_k}, f)
+        # TODO: make it in the exponent
+        # json.dump({"shares": shares, "P": exp_p, "K": exp_k}, f)
+        json.dump({"shares": shares, "P": bit_password, "K": k}, f)
+
 
     print(f"Shares saved for user {username}")
 
@@ -45,6 +56,7 @@ def set_up():
             conn, addr = s.accept()
             with conn:
                 print('Connected by', addr)
+                start = time.perf_counter()
                 while True:
                     data = conn.recv(1024)
                     if not data:
@@ -60,32 +72,69 @@ def set_up():
                             registration(username, password)
                             response = "Registration successful"
                             conn.sendall(response.encode())
+
+                            end = time.perf_counter()
+                            print(f"Time taken for registration: {end - start:.6f} seconds")
+
                         elif action == "authenticate" and username:
                             try:
+                                print("=== User Authentication ===")
+
+                                print("=== cipher generation ===")
+                                start_preprocess = time.perf_counter()
                                 with open(f"{username}_file.json", "r") as f:
                                     file = json.load(f)
 
                                 shares = file["shares"]
-                                exp_K = file["K"]
-                                exp_P = file["P"]
-                                # TODO: randomize pw_file
+                                k = file["K"]
+                                pw = file["P"]
 
                                 k_prime = random_int()
-                                exp_K = add_mod(in_exponent(k_prime), exp_K)
+                                new_k = add_mod(k_prime, k)
                                 n = len(shares)
                                 t = n - 2 * 8 - 1
                                 random_shares = create_shares(k_prime, n, t)
                                 for i in range(n):
-                                    r = in_exponent(random_shares[i])
-                                    shares[i] = (add_mod(shares[i][0], r), add_mod(shares[i][1], r))
+                                    shares[i] = (add_mod(shares[i][0], random_shares[i]), add_mod(shares[i][1], random_shares[i]))
+                                print(f"The key is: ", new_k)
+
+                                # TODO: make it in the exponent
+                                # shares = file["shares"]
+                                # exp_K = file["K"]
+                                # exp_P = file["P"]
+                                #
+                                # k_prime = random_int()
+                                # exp_K = add_mod(in_exponent(k_prime), exp_K)
+                                # n = len(shares)
+                                # t = n - 2 * 8 - 1
+                                # random_shares = create_shares(k_prime, n, t)
+                                # for i in range(n):
+                                #     r = in_exponent(random_shares[i])
+                                #     shares[i] = (add_mod(shares[i][0], r), add_mod(shares[i][1], r))
+                                # print(f"The session_key is: ", exp_K)
 
                                 # TODO: encrypt with new K (new shares and P) -> c
-                                # send the c to the client
-                                response = "This is a placeholder for the encrypted data"
-                                conn.sendall(response.encode())
+                                response = encrypt(new_k, shares, pw)
 
-                                # run OT
+                                print(response)
+
+                                conn.sendall(response.encode())
+                                print("cipher sent")
+                                end_preprocess = time.perf_counter()
+                                print(f"Time taken for cipher generation: {end_preprocess - start_preprocess:.6f} seconds")
+
+
+                                print("=== OT ===")
+                                start_ot = time.perf_counter()
                                 mpc.run(sender_ot(shares))
+                                end_ot = time.perf_counter()
+                                print("completed OT")
+                                print(f"Time taken for OT: {end_ot - start_ot:.6f} seconds")
+
+
+                                print(f"SESSION KEY: {new_k}")
+                                end = time.perf_counter()
+                                print(f"Time taken for authentication: {end - start:.6f} seconds")
 
                             except FileNotFoundError:
                                 response = "User not found"
