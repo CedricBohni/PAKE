@@ -1,150 +1,150 @@
 import json
 import socket
 from utils import string_to_bitstring
-import os
 from ot_protocol import sender_ot
 from mpyc.runtime import mpc
-from crypto_utils import create_shares, random_int, in_exponent, add_mod, encrypt
+from RSS import RobustSecretSharing
+from Math import ModularArithmetic
+from IC import encrypt
 import time
 
-HOST = '127.0.0.1'
-PORT = 65433
+class Server:
+    def __init__(self, host='127.0.0.1', port=65432):
+        self.HOST = host
+        self.PORT = port
+        self.Math = ModularArithmetic()
 
-def registration(username, password):
-    bit_password = string_to_bitstring(password)
+    def start(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((self.HOST, self.PORT))
+            s.listen()
+            print(f"Server listening on {self.HOST}:{self.PORT}")
+            while True:
+                conn, addr = s.accept()
+                with conn:
+                    print('Connected by', addr)
+                    start = time.perf_counter()
+                    while True:
+                        data = conn.recv(1024)
+                        if not data:
+                            break
+                        print("Received:", data.decode())
+                        self.handle_request(conn, data, start)
 
-    print(f"bit_password: {bit_password}")
+    def handle_request(self, conn, data, start):
+        try:
+            message = json.loads(data.decode())
+            action = message.get("action")
+            username = message.get("username")
+            password = message.get("password")
 
-    n = len(bit_password)
-    t = n - 2*8 - 1 # -1 necessary for the reed solomon codes to work
-    k = random_int()
+            actions = {
+                "register": lambda: self.handle_registration(conn, username, password, start),
+                "authenticate": lambda: self.handle_authentication(conn, username, start)
+            }
 
-    exp_k = in_exponent(k)
-    exp_p = in_exponent(int(string_to_bitstring(password), 2))
+            if action in actions:
+                actions[action]()
+            else:
+                self.send_response(conn, "Invalid action or data")
+        except json.JSONDecodeError:
+            self.send_response(conn, "Invalid JSON format")
 
-    key_shares = create_shares(k, n, t)
-
-    shares = [None]*n
-
-    # TODO: make it in the exponent
-    # for i, bit in enumerate(bit_password):
-    #     if bit == '1':
-    #         shares[i] = (in_exponent(random_int()), in_exponent(key_shares[i]))
-    #     else:
-    #         shares[i] = (in_exponent(key_shares[i]), in_exponent(random_int()))
-
-    for i, bit in enumerate(bit_password):
-        if bit == '1':
-            shares[i] = (random_int(), key_shares[i])
+    def handle_registration(self, conn, username, password, start):
+        if username and password:
+            print("=== User Registration ===")
+            self.registration(username, password)
+            self.send_response(conn, "Registration successful")
+            end = time.perf_counter()
+            print(f"Time taken for registration: {end - start:.6f} seconds")
         else:
-            shares[i] = (key_shares[i], random_int())
+            self.send_response(conn, "Invalid registration data")
 
-    with open(f"{username}_file.json", "w") as f:
-        # TODO: make it in the exponent
-        # json.dump({"shares": shares, "P": exp_p, "K": exp_k}, f)
-        json.dump({"shares": shares, "P": bit_password, "K": k}, f)
+    def handle_authentication(self, conn, username, start):
+        if username:
+            try:
+                print("=== User Authentication ===")
+                response, shares, new_k = self.process_file(username)
+                self.send_response(conn, response)
+                print("cipher sent")
+                self.ot_procotocol(shares)
+                print(f"SESSION KEY: {new_k}")
+                end = time.perf_counter()
+                print(f"Time taken for authentication: {end - start:.6f} seconds")
+            except FileNotFoundError:
+                self.send_response(conn, "User not found")
+        else:
+            self.send_response(conn, "Invalid authentication data")
 
+    def ot_procotocol(self, shares):
+        print("=== OT ===")
+        start_ot = time.perf_counter()
+        mpc.run(sender_ot(shares))
+        end_ot = time.perf_counter()
+        print("completed OT")
+        print(f"Time taken for OT: {end_ot - start_ot:.6f} seconds")
 
-    print(f"Shares saved for user {username}")
+    def send_response(self, conn, message):
+        conn.sendall(message.encode())
 
-def set_up():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
-        s.listen()
-        print(f"Server listening on {HOST}:{PORT}")
-        while True:
-            conn, addr = s.accept()
-            with conn:
-                print('Connected by', addr)
-                start = time.perf_counter()
-                while True:
-                    data = conn.recv(1024)
-                    if not data:
-                        break
-                    print("Received:", data.decode())
-                    try:
-                        message = json.loads(data.decode())
-                        action = message.get("action")
-                        username = message.get("username")
-                        password = message.get("password")
+    def registration(self, username, password):
+        bit_password = string_to_bitstring(password)
 
-                        if action == "register" and username and password:
-                            registration(username, password)
-                            response = "Registration successful"
-                            conn.sendall(response.encode())
+        print(f"bit_password: {bit_password}")
 
-                            end = time.perf_counter()
-                            print(f"Time taken for registration: {end - start:.6f} seconds")
+        n = len(bit_password)
+        t = n - 2 * 8 - 1  # -1 necessary for the reed solomon codes to work
+        k = self.Math.generate_random_int()
 
-                        elif action == "authenticate" and username:
-                            try:
-                                print("=== User Authentication ===")
+        exp_k = self.Math.modular_generator_exponentiation(k)
+        exp_p = self.Math.modular_generator_exponentiation(int(string_to_bitstring(password), 2))
 
-                                print("=== cipher generation ===")
-                                start_preprocess = time.perf_counter()
-                                with open(f"{username}_file.json", "r") as f:
-                                    file = json.load(f)
+        RSS = RobustSecretSharing(n, t, 0)
+        key_shares = RSS.generate_shares(k)
 
-                                shares = file["shares"]
-                                k = file["K"]
-                                pw = file["P"]
+        shares = [None] * n
 
-                                k_prime = random_int()
-                                new_k = add_mod(k_prime, k)
-                                n = len(shares)
-                                t = n - 2 * 8 - 1
-                                random_shares = create_shares(k_prime, n, t)
-                                for i in range(n):
-                                    shares[i] = (add_mod(shares[i][0], random_shares[i]), add_mod(shares[i][1], random_shares[i]))
-                                print(f"The key is: ", new_k)
+        for i, bit in enumerate(bit_password):
+            if bit == '1':
+                shares[i] = (self.Math.generate_random_int(), key_shares[i])
+            else:
+                shares[i] = (key_shares[i], self.Math.generate_random_int())
 
-                                # TODO: make it in the exponent
-                                # shares = file["shares"]
-                                # exp_K = file["K"]
-                                # exp_P = file["P"]
-                                #
-                                # k_prime = random_int()
-                                # exp_K = add_mod(in_exponent(k_prime), exp_K)
-                                # n = len(shares)
-                                # t = n - 2 * 8 - 1
-                                # random_shares = create_shares(k_prime, n, t)
-                                # for i in range(n):
-                                #     r = in_exponent(random_shares[i])
-                                #     shares[i] = (add_mod(shares[i][0], r), add_mod(shares[i][1], r))
-                                # print(f"The session_key is: ", exp_K)
+        with open(f"{username}_file.json", "w") as f:
+            json.dump({"shares": shares, "P": bit_password, "K": k}, f)
 
-                                # TODO: encrypt with new K (new shares and P) -> c
-                                response = encrypt(new_k, shares, pw)
+        print(f"Shares saved for user {username}")
 
-                                print(response)
+    def process_file(self, username):
+        print("=== processing file ===")
+        start = time.perf_counter()
 
-                                conn.sendall(response.encode())
-                                print("cipher sent")
-                                end_preprocess = time.perf_counter()
-                                print(f"Time taken for cipher generation: {end_preprocess - start_preprocess:.6f} seconds")
+        with open(f"{username}_file.json", "r") as f:
+            file = json.load(f)
 
+        shares = file["shares"]
+        k = file["K"]
+        pw = file["P"]
 
-                                print("=== OT ===")
-                                start_ot = time.perf_counter()
-                                mpc.run(sender_ot(shares))
-                                end_ot = time.perf_counter()
-                                print("completed OT")
-                                print(f"Time taken for OT: {end_ot - start_ot:.6f} seconds")
+        k_prime = self.Math.generate_random_int()
+        new_k = self.Math.modular_addition(k_prime, k)
+        n = len(shares)
+        t = n - 2 * 8 - 1
 
+        RSS = RobustSecretSharing(n, t, 0)
+        random_shares = RSS.generate_shares(k_prime)
+        for i in range(n):
+            shares[i] = (self.Math.modular_addition(shares[i][0], random_shares[i]),
+                         self.Math.modular_addition(shares[i][1], random_shares[i]))
+        print(f"The new key is: ", new_k)
 
-                                print(f"SESSION KEY: {new_k}")
-                                end = time.perf_counter()
-                                print(f"Time taken for authentication: {end - start:.6f} seconds")
+        response = encrypt(new_k, shares, pw)
 
-                            except FileNotFoundError:
-                                response = "User not found"
-                                conn.sendall(response.encode())
-                        else:
-                            response = "Invalid action or data"
-                            conn.sendall(response.encode())
-                    except json.JSONDecodeError:
-                        response = "Invalid JSON format"
-                        conn.sendall(response.encode())
+        end = time.perf_counter()
+        print(f"Time taken for processing file: {end - start:.6f} seconds")
+
+        return response, shares, new_k
 
 if __name__ == "__main__":
-    set_up()
+    server = Server()
+    server.start()
