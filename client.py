@@ -84,11 +84,20 @@ class Client:
         decrypted_data = decrypt(key, ciphertext)
 
         cipher_shares = [tuple(pair) for pair in decrypted_data["shares"]]
+        cipher_password = [int(bit) for bit in decrypted_data["pw"]]
 
-        for i in range(16):
-            if shares[i] not in cipher_shares[i]:
-                print("file has been tampered with")
-                return
+        hamming_distance = sum(p1 != p2 for p1, p2 in zip(password, cipher_password))
+
+        if hamming_distance > 2:
+            key = self.RSS.Math.generate_random_int()
+            print("password is not in hamming distance")
+
+        else:
+            for i in range(16):
+                passwd_bit = password[i]
+                if shares[i] != cipher_shares[i][passwd_bit]:
+                    key = self.RSS.Math.generate_random_int()
+                    print("file has been tampered with")
 
         session_key = self.RSS.Math.pseudo_random_generator(key)
 
