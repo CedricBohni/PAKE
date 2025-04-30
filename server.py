@@ -67,6 +67,7 @@ class Server:
                 response, shares, new_k = self.process_file(username)
                 self.send_response(conn, response)
                 print("cipher sent")
+                print("OT shares:", shares)
                 self.ot_procotocol(shares)
                 print(f"SESSION KEY: {new_k}")
                 end = time.perf_counter()
@@ -101,7 +102,12 @@ class Server:
 
         shares = [None] * n
 
+        print(f"check reconstruct: ", )
+
         for i, bit in enumerate(password):
+            print(f"i:", i)
+            print(f"bit:", bit)
+
             if bit == '1':
                 shares[i] = (self.Math.generate_random_int(), key_shares[i])
             else:
@@ -125,9 +131,10 @@ class Server:
         pw = file["P"]
 
         k_prime = self.Math.generate_random_int()
-        new_k = self.Math.modular_addition(k_prime, k)
 
         random_shares = self.RSS.generate_shares(k_prime)
+
+        new_k = self.Math.modular_addition(k_prime, k)
 
         for i in range(len(shares)):
             shares[i] = (self.Math.modular_addition(shares[i][0], random_shares[i]),

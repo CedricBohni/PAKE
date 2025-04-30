@@ -13,6 +13,7 @@ class Client:
     def __init__(self, host='127.0.0.1', port=65432):
         self.host = host
         self.port = port
+        self.RSS = RobustSecretSharing(16, 13, 2)
 
     def send_request(self, data):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -109,8 +110,7 @@ class Client:
         print("=== Reconstruction ===")
         start_recon = time.perf_counter()
         n = len(shares)
-        RSS = RobustSecretSharing(n, 13, 2)
-        key = RSS.reconstruct_secret(shares)
+        key = self.RSS.reconstruct_secret(shares)
         print(f"Reconstructed key: {key}")
         end_recon = time.perf_counter()
         print(f"Time taken for reconstruction: {end_recon - start_recon:.6f} seconds")

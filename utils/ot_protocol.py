@@ -1,5 +1,4 @@
 from mpyc.runtime import mpc
-import random
 
 # pid = 1
 async def sender_ot(input):
