@@ -139,3 +139,11 @@ class ModularArithmetic:
             int: The result of (a / b) % PRIME.
         """
         return self.modular_multiplication(a, self.modular_inverse(b))
+
+    def pseudo_random_generator(self, seed):
+
+        value = pow(self.generator, seed, self.PRIME)
+        output = value.to_bytes((value.bit_length() + 7) // 8, 'big')
+
+        return output.hex()
+

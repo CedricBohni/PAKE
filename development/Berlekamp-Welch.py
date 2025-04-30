@@ -1,6 +1,3 @@
-from utils.utils import Math
-
-
 class RobustSecretSharing:
     def __init__(self, n: int, t: int, e: int) -> None:
         """

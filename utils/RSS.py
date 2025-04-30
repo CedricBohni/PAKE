@@ -1,48 +1,22 @@
-from .Math import ModularArithmetic
+from utils.Math import ModularArithmetic
 from collections import defaultdict
 from itertools import combinations
 
 class RobustSecretSharing:
     def __init__(self, n: int, t: int, e: int) -> None:
-        """
-        Initialize the RSS (Robust Secret Sharing) instance.
-
-        Args:
-            n (int): Total number of shares.
-            t (int): Minimum number of shares required to reconstruct the secret.
-            e (int): Number of errors tolerated.
-        """
         self.n = n
         self.t = t
         self.e = e
         self.Math = ModularArithmetic()
 
     def generate_shares(self, secret: int) -> list[int]:
-        """
-        Generate shares for the given secret.
 
-        Args:
-            secret (int): The secret to be shared.
-
-        Returns:
-            list[int]: A list of shares.
-        """
         secret = self.Math.mod(secret)
-        # s + a_1*x + a_2*x^2 + ... + a_(t-1)*x^(t-1)
         polynomial_coefficients = [secret] + [self.Math.generate_random_int() for _ in range(self.t - 1)]
         return [self.evaluate_polynomial(polynomial_coefficients, x) for x in range(1, self.n + 1)]
 
     def evaluate_polynomial(self, coefficients: list[int], x: int) -> int:
-        """
-        Evaluate a polynomial at a given x value.
 
-        Args:
-            coefficients (list[int]): Coefficients of the polynomial.
-            x (int): The x value to evaluate the polynomial at.
-
-        Returns:
-            int: The result of the polynomial evaluation modulo PRIME.
-        """
         result = 0
         for i, coefficient in enumerate(coefficients):
             result = self.Math.mod(result + coefficient * self.Math.modular_exponentiation(x, i))
@@ -83,16 +57,6 @@ class RobustSecretSharing:
         return None
 
     def lagrange_coefficient(self, x_values: list[int], i: int) -> int:
-        """
-        Compute the Lagrange coefficient for a given index.
-
-        Args:
-            x_values (list[int]): The x values of the shares.
-            i (int): The index for which to compute the coefficient.
-
-        Returns:
-            int: The Lagrange coefficient modulo PRIME.
-        """
         coefficient = 1
         for j in range(len(x_values)):
             if i != j:
@@ -103,12 +67,8 @@ if __name__ == "__main__":
     n = 16
     t = 13
     e = 2
-    # 16 13 2
-    # 12 9 2
-    # 9 6 2
 
     RSS = RobustSecretSharing(n, t, e)
-    # need >= t + 2*e for reconstruction if e errors
     secret = RSS.Math.generate_random_int()
     print(f"secret: ", secret)
     shares = RSS.generate_shares(secret)

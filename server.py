@@ -51,102 +51,77 @@ class Server:
             self.send_response(conn, "Invalid JSON format")
 
     def handle_registration(self, conn, username, password, start):
-        if username and password:
-            print("=== User Registration ===")
-            response = self.registration(username, password)
-            self.send_response(conn, response)
+        if username and password and len(password) == 16:
+
+            k = self.Math.generate_random_int()
+            k_shares = self.RSS.generate_shares(k)
+
+            shares = [(None, None)] * 16
+
+            for i in range(16):
+                password_bit = password[i]
+                k_i = k_shares[i]
+                r_i = self.Math.generate_random_int()
+                if password_bit == 0:
+                    shares[i] = (k_i, r_i)
+                else:
+                    shares[i] = (r_i, k_i)
+
+            with open(f"userFiles/{username}_file.json", "w") as f:
+                json.dump({"shares": shares, "pw": ''.join(map(str, password)), "k": k}, f)
+
+            conn.sendall("Registration successful".encode())
+
             end = time.perf_counter()
             print(f"Time taken for registration: {end - start:.6f} seconds")
+
         else:
-            self.send_response(conn, "Invalid registration data")
+            conn.sendall("Invalid registration data".encode())
 
     def handle_authentication(self, conn, username, start):
         if username:
-            try:
-                print("=== User Authentication ===")
-                response, shares, new_k = self.process_file(username)
-                self.send_response(conn, response)
-                print("cipher sent")
-                print("OT shares:", shares)
-                self.ot_procotocol(shares)
-                print(f"SESSION KEY: {new_k}")
-                end = time.perf_counter()
-                print(f"Time taken for authentication: {end - start:.6f} seconds")
-            except FileNotFoundError:
-                self.send_response(conn, "User not found")
+
+            with open(f"userFiles/{username}_file.json", "r") as f:
+                file = json.load(f)
+
+            shares = file["shares"]
+            k = file["k"]
+            password = file["pw"]
+
+            random_secret = self.Math.generate_random_int()
+            random_secret_shares = self.RSS.generate_shares(random_secret)
+
+            randomized_k = self.Math.modular_addition(k, random_secret)
+
+            randomized_shares = [(None, None)] * 16
+            for i in range(16):
+                k_i = shares[i][0]
+                r_i = shares[i][1]
+                randomized_shares[i] = (self.Math.modular_addition(k_i, random_secret_shares[i]),
+                                        self.Math.modular_addition(r_i, random_secret_shares[i]))
+
+
+            json_shares = [list(pair) for pair in randomized_shares]
+            data = json.dumps({
+                "shares": json_shares,
+                "pw": password
+            })
+
+            ciphertext = encrypt(randomized_k, data)
+
+            conn.sendall(ciphertext.encode())
+
+            session_key = self.Math.pseudo_random_generator(randomized_k)
+
+            mpc.run(sender_ot(randomized_shares))
+
+            print(f"SESSION KEY: {session_key}")
+
+            end = time.perf_counter()
+            print(f"Time taken for authentication: {end - start:.6f} seconds")
+
         else:
-            self.send_response(conn, "Invalid authentication data")
-
-    def ot_procotocol(self, shares):
-        print("=== OT ===")
-        start_ot = time.perf_counter()
-        mpc.run(sender_ot(shares))
-        end_ot = time.perf_counter()
-        print("completed OT")
-        print(f"Time taken for OT: {end_ot - start_ot:.6f} seconds")
-
-    def send_response(self, conn, message):
-        conn.sendall(message.encode())
-
-    def registration(self, username, password):
-        n = len(password)
-        if n != 16:
-            return "Registration failed: Password must be exactly 16 bits long"
-
-        k = self.Math.generate_random_int()
-
-        # exp_k = self.Math.modular_generator_exponentiation(k)
-        # exp_p = self.Math.modular_generator_exponentiation(int(string_to_bitstring(password), 2))
-
-        key_shares = self.RSS.generate_shares(k)
-
-        shares = [None] * n
-
-        print(f"check reconstruct: ", )
-
-        for i, bit in enumerate(password):
-            print(f"i:", i)
-            print(f"bit:", bit)
-
-            if bit == '1':
-                shares[i] = (self.Math.generate_random_int(), key_shares[i])
-            else:
-                shares[i] = (key_shares[i], self.Math.generate_random_int())
-
-        with open(f"userFiles/{username}_file.json", "w") as f:
-            json.dump({"shares": shares, "P": ''.join(map(str, password)), "K": k}, f)
-
-        print(f"Shares saved for user {username}")
-        return "Registration successful"
-
-    def process_file(self, username):
-        print("=== processing file ===")
-        start = time.perf_counter()
-
-        with open(f"userFiles/{username}_file.json", "r") as f:
-            file = json.load(f)
-
-        shares = file["shares"]
-        k = file["K"]
-        pw = file["P"]
-
-        k_prime = self.Math.generate_random_int()
-
-        random_shares = self.RSS.generate_shares(k_prime)
-
-        new_k = self.Math.modular_addition(k_prime, k)
-
-        for i in range(len(shares)):
-            shares[i] = (self.Math.modular_addition(shares[i][0], random_shares[i]),
-                         self.Math.modular_addition(shares[i][1], random_shares[i]))
-        print(f"The new key is: ", new_k)
-
-        response = encrypt(new_k, shares, pw)
-
-        end = time.perf_counter()
-        print(f"Time taken for processing file: {end - start:.6f} seconds")
-
-        return response, shares, new_k
+         conn.sendall("Invalid authentication data".encode())
 
 if __name__ == "__main__":
     server = Server()
