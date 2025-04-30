@@ -1,6 +1,6 @@
-import Math
-from collections import Counter, defaultdict
-import itertools
+from .Math import ModularArithmetic
+from collections import defaultdict
+from itertools import combinations
 
 class RobustSecretSharing:
     def __init__(self, n: int, t: int, e: int) -> None:
@@ -15,7 +15,7 @@ class RobustSecretSharing:
         self.n = n
         self.t = t
         self.e = e
-        self.Math = Math.ModularArithmetic()
+        self.Math = ModularArithmetic()
 
     def generate_shares(self, secret: int) -> list[int]:
         """
@@ -43,40 +43,44 @@ class RobustSecretSharing:
         Returns:
             int: The result of the polynomial evaluation modulo PRIME.
         """
-        result = coefficients[-1]
-        # Horner's method
-        for coeff in reversed(coefficients[:-1]):
-            result = self.Math.mod(result * x + coeff)
+        result = 0
+        for i, coefficient in enumerate(coefficients):
+            result = self.Math.mod(result + coefficient * self.Math.modular_exponentiation(x, i))
         return result
 
     def reconstruct_secret(self, shares: list[int]) -> int | None:
-        """
-        Reconstruct the secret from the given shares.
+        if len(shares) < self.t:
+            print(f"Not enough shares. At least {self.t} shares are required.")
+            return None
 
-        Args:
-            shares (list[int]): A list of shares.
-
-        Returns:
-            int | None: The reconstructed secret, or None if reconstruction fails.
-        """
         seen = defaultdict(int)
 
-        for indices in itertools.combinations(range(len(shares)), self.t):
+        x_values = list(range(1, len(shares) + 1))
+        shares = list(zip(x_values, shares))
+
+        for subset in combinations(shares, self.t):
+            x_values, y_values = zip(*subset)
             try:
-                x_values = [i + 1 for i in indices]
-                y_values = [shares[i] for i in indices]
-
+                x_values, y_values = zip(*subset)
                 secret = 0
-                for i in range(len(indices)):
-                    secret = self.Math.modular_addition(secret, self.Math.modular_multiplication(y_values[i], self.lagrange_coefficient(x_values, i)))
-
+                for i in range(self.t):
+                    lagrange_coeff = self.lagrange_coefficient(list(x_values), i)
+                    secret = self.Math.modular_addition(secret,
+                                                        self.Math.modular_multiplication(y_values[i], lagrange_coeff))
                 seen[secret] += 1
             except Exception:
                 continue
 
         if seen:
-            return max(seen.items(), key=lambda x: x[1])[0]
-        return 0
+            most_common = max(seen.items(), key=lambda x: x[1])
+            if list(seen.values()).count(most_common[1]) > 1:
+                print("No unique most common secret found.")
+                return None
+            print(f"Returning most common secret: {most_common[0]}, seen {most_common[1]} times.")
+            print(f"I have seen; {len(seen)} different secrets.")
+            return most_common[0]
+
+        return None
 
     def lagrange_coefficient(self, x_values: list[int], i: int) -> int:
         """
@@ -96,44 +100,70 @@ class RobustSecretSharing:
         return coefficient
 
 if __name__ == "__main__":
-    RSS = RobustSecretSharing(12, 5, 1)
+    n = 16
+    t = 13
+    e = 2
+    # 16 13 2
+    # 12 9 2
+    # 9 6 2
+
+    RSS = RobustSecretSharing(n, t, e)
     # need >= t + 2*e for reconstruction if e errors
     shares = RSS.generate_shares(10)
 
-    print("✅ Reconstruct the secret from all shares")
+    print("=== Shares ===")
+    print("Shares: ", shares)
+
+    print("1. ✅ Reconstruct the secret from all shares")
     used_shares = shares
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
-    print("❌ Reconstruct with <t insufficient shares")
-    used_shares = shares[:4]
+    print("2. ❌ Reconstruct with <t insufficient shares")
+    used_shares = shares[:t-1]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
-    print("✅ Reconstruct with t honest shares")
-    used_shares = shares[:5]
+    print("3. ✅ Reconstruct with t honest shares")
+    used_shares = shares[:t]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
-    print("❌ Reconstruct with only t honest shares + e error shares")
-    used_shares = [0] + shares[1:6]
+    print("4. ❌ Reconstruct with only t honest shares + e error shares")
+    used_shares = [1 for i in range(e)] + shares[e:t+e]
+    reconstruct_secret = RSS.reconstruct_secret(used_shares)
+    print("Reconstructed Secret: ", reconstruct_secret)
+    used_shares = shares[:t] + [1 for i in range(e)]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
-    print("✅ Reconstruct with e error shares t honest shares so that  >= t + 2*e")
-    used_shares = [0] + shares[1:7]
+    print("5. ✅ Reconstruct with e error shares t honest shares so that  >= t + 2*e")
+    used_shares = [1 for i in range(e)] + shares[e:t+(2*e)]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
-    print("❌ Reconstruct with t honest shares and too many e error shares")
-    used_shares = [0] + shares[1:6] + [0]
+    print("6. ❌ Reconstruct with too many e error shares")
+    used_shares = [1 for i in range(e)] + shares[e:n-1] + [1]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
-    RSS = RobustSecretSharing(64, 48, 8)
-    # t <= n - 2*e => 64 - 2*8 = 48
-    shares = RSS.generate_shares(10)
-    print("✅ Reconstruct the secret from all shares")
-    used_shares = shares
+    print("7. ✅ Reconstruct with e error shares")
+    used_shares = [1 for i in range(e)] + shares[e:]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
+    print("Reconstructed Secret: ", reconstruct_secret)
+
+    print("8. ✅ Reconstruct with e error shares")
+    used_shares = shares[0:n-e] + [1 for i in range(e)]
+    reconstruct_secret = RSS.reconstruct_secret(used_shares)
+    print("Reconstructed Secret: ", reconstruct_secret)
+
+    print("9. ✅ Reconstruct randomized shares")
+    random_shares = RSS.generate_shares(3)
+    new_secret = RSS.Math.modular_addition(10, 3)
+    print("new secret: ", new_secret)
+    new_shares = [None] * n
+    for i in range(len(random_shares)):
+        new_shares[i] = RSS.Math.modular_addition(shares[i], random_shares[i])
+
+    reconstruct_secret = RSS.reconstruct_secret(new_shares)
     print("Reconstructed Secret: ", reconstruct_secret)

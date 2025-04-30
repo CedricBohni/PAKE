@@ -1,11 +1,10 @@
 import json
 import socket
-from utils import string_to_bitstring
-from ot_protocol import sender_ot
+from utils.ot_protocol import sender_ot
 from mpyc.runtime import mpc
-from RSS import RobustSecretSharing
-from Math import ModularArithmetic
-from IC import encrypt
+from utils.RSS import RobustSecretSharing
+from utils.Math import ModularArithmetic
+from utils.IC import encrypt
 import time
 
 class Server:
@@ -13,6 +12,7 @@ class Server:
         self.HOST = host
         self.PORT = port
         self.Math = ModularArithmetic()
+        self.RSS = RobustSecretSharing(16, 13, 2)
 
     def start(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -53,8 +53,8 @@ class Server:
     def handle_registration(self, conn, username, password, start):
         if username and password:
             print("=== User Registration ===")
-            self.registration(username, password)
-            self.send_response(conn, "Registration successful")
+            response = self.registration(username, password)
+            self.send_response(conn, response)
             end = time.perf_counter()
             print(f"Time taken for registration: {end - start:.6f} seconds")
         else:
@@ -88,38 +88,36 @@ class Server:
         conn.sendall(message.encode())
 
     def registration(self, username, password):
-        bit_password = string_to_bitstring(password)
+        n = len(password)
+        if n != 16:
+            return "Registration failed: Password must be exactly 16 bits long"
 
-        print(f"bit_password: {bit_password}")
-
-        n = len(bit_password)
-        t = n - 2 * 8 - 1  # -1 necessary for the reed solomon codes to work
         k = self.Math.generate_random_int()
 
-        exp_k = self.Math.modular_generator_exponentiation(k)
-        exp_p = self.Math.modular_generator_exponentiation(int(string_to_bitstring(password), 2))
+        # exp_k = self.Math.modular_generator_exponentiation(k)
+        # exp_p = self.Math.modular_generator_exponentiation(int(string_to_bitstring(password), 2))
 
-        RSS = RobustSecretSharing(n, t, 0)
-        key_shares = RSS.generate_shares(k)
+        key_shares = self.RSS.generate_shares(k)
 
         shares = [None] * n
 
-        for i, bit in enumerate(bit_password):
+        for i, bit in enumerate(password):
             if bit == '1':
                 shares[i] = (self.Math.generate_random_int(), key_shares[i])
             else:
                 shares[i] = (key_shares[i], self.Math.generate_random_int())
 
-        with open(f"{username}_file.json", "w") as f:
-            json.dump({"shares": shares, "P": bit_password, "K": k}, f)
+        with open(f"userFiles/{username}_file.json", "w") as f:
+            json.dump({"shares": shares, "P": ''.join(map(str, password)), "K": k}, f)
 
         print(f"Shares saved for user {username}")
+        return "Registration successful"
 
     def process_file(self, username):
         print("=== processing file ===")
         start = time.perf_counter()
 
-        with open(f"{username}_file.json", "r") as f:
+        with open(f"userFiles/{username}_file.json", "r") as f:
             file = json.load(f)
 
         shares = file["shares"]
@@ -128,12 +126,10 @@ class Server:
 
         k_prime = self.Math.generate_random_int()
         new_k = self.Math.modular_addition(k_prime, k)
-        n = len(shares)
-        t = n - 2 * 8 - 1
 
-        RSS = RobustSecretSharing(n, t, 0)
-        random_shares = RSS.generate_shares(k_prime)
-        for i in range(n):
+        random_shares = self.RSS.generate_shares(k_prime)
+
+        for i in range(len(shares)):
             shares[i] = (self.Math.modular_addition(shares[i][0], random_shares[i]),
                          self.Math.modular_addition(shares[i][1], random_shares[i]))
         print(f"The new key is: ", new_k)

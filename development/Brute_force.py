@@ -1,5 +1,4 @@
-import Math
-import random
+from utils.utils import Math
 from collections import defaultdict
 from itertools import combinations
 
@@ -50,44 +49,38 @@ class RobustSecretSharing:
         return result
 
     def reconstruct_secret(self, shares: list[int]) -> int | None:
-        """
-        Reconstruct the secret from the given shares using error-tolerant methods.
-
-        Args:
-            shares (list[int]): A list of shares.
-
-        Returns:
-            int | None: The reconstructed secret, or None if reconstruction fails.
-        """
-        # Ensure there are enough shares to attempt reconstruction
         if len(shares) < self.t:
             print(f"Not enough shares. At least {self.t} shares are required.")
             return None
 
         seen = defaultdict(int)
 
-        # Use a greedy sliding window approach to attempt reconstruction
-        for _ in range(100):  # Try 100 random samples to improve performance
-            random_indices = random.sample(range(len(shares)), self.t)
+        x_values = list(range(1, len(shares) + 1))
+        shares = list(zip(x_values, shares))
+
+        for subset in combinations(shares, self.t):
+            x_values, y_values = zip(*subset)
             try:
-                x_values = [i + 1 for i in random_indices]  # x-values for the shares (indices + 1)
-                y_values = [shares[i] for i in random_indices]  # y-values (share values)
-
+                x_values, y_values = zip(*subset)
                 secret = 0
-                for i in range(len(random_indices)):
-                    lagrange_coeff = self.lagrange_coefficient(x_values, i)
-                    secret = self.Math.modular_addition(secret, self.Math.modular_multiplication(y_values[i], lagrange_coeff))
-
-                # Store the reconstructed secret for each valid combination of shares
+                for i in range(self.t):
+                    lagrange_coeff = self.lagrange_coefficient(list(x_values), i)
+                    secret = self.Math.modular_addition(secret,
+                                                        self.Math.modular_multiplication(y_values[i], lagrange_coeff))
                 seen[secret] += 1
             except Exception:
                 continue
 
         if seen:
-            # Return the most frequent reconstruction (the correct one)
-            return max(seen.items(), key=lambda x: x[1])[0]
+            most_common = max(seen.items(), key=lambda x: x[1])
+            if list(seen.values()).count(most_common[1]) > 1:
+                print("No unique most common secret found.")
+                return None
+            print(f"Returning most common secret: {most_common[0]}, seen {most_common[1]} times.")
+            print(f"I have seen; {len(seen)} different secrets.")
+            return most_common[0]
 
-        return None  # Return None if no valid reconstruction found
+        return None
 
     def lagrange_coefficient(self, x_values: list[int], i: int) -> int:
         """
@@ -107,14 +100,19 @@ class RobustSecretSharing:
         return coefficient
 
 if __name__ == "__main__":
-    # 8: n = 64 6: n = 48
-    n = 24
-    t = 10 + 1
-    e = 3
-    # 3*6 + 3 =
+    n = 16
+    t = 13
+    e = 2
+    # 16 13 2
+    # 12 9 2
+    # 9 6 2
+
     RSS = RobustSecretSharing(n, t, e)
     # need >= t + 2*e for reconstruction if e errors
     shares = RSS.generate_shares(10)
+
+    print("=== Shares ===")
+    print("Shares: ", shares)
 
     print("1. ✅ Reconstruct the secret from all shares")
     used_shares = shares
@@ -132,27 +130,29 @@ if __name__ == "__main__":
     print("Reconstructed Secret: ", reconstruct_secret)
 
     print("4. ❌ Reconstruct with only t honest shares + e error shares")
-    used_shares = [1]*e + shares[e:t+e]
+    used_shares = [1 for i in range(e)] + shares[e:t+e]
+    reconstruct_secret = RSS.reconstruct_secret(used_shares)
+    print("Reconstructed Secret: ", reconstruct_secret)
+    used_shares = shares[:t] + [1 for i in range(e)]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
     print("5. ✅ Reconstruct with e error shares t honest shares so that  >= t + 2*e")
-    used_shares = [1]*e + shares[e:t+e]
+    used_shares = [1 for i in range(e)] + shares[e:t+(2*e)]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
     print("6. ❌ Reconstruct with too many e error shares")
-    used_shares = [1]*e + shares[e:n-1] + [0]
+    used_shares = [1 for i in range(e)] + shares[e:n-1] + [1]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
     print("7. ✅ Reconstruct with e error shares")
-    used_shares = [1] * e + shares[e:]
+    used_shares = [1 for i in range(e)] + shares[e:]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
     print("8. ✅ Reconstruct with e error shares")
-    used_shares = shares[0:n-e] + [1] * e
-    print(f"number of shares: {len(used_shares)}")
+    used_shares = shares[0:n-e] + [1 for i in range(e)]
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)

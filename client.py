@@ -1,11 +1,13 @@
 import json
 import socket
 import time
-from utils import string_to_bitstring
-from ot_protocol import receiver_ot
+
+import cryptography
+
+from utils.ot_protocol import receiver_ot
 from mpyc.runtime import mpc
-from RSS import RobustSecretSharing
-from IC import decrypt
+from utils.RSS import RobustSecretSharing
+from utils.IC import decrypt
 
 class Client:
     def __init__(self, host='127.0.0.1', port=65432):
@@ -33,10 +35,16 @@ class Client:
         print("=== Explicit Authentication ===")
         start_auth = time.perf_counter()
         shares_prime, pw_prime = decrypt(key, response_data)
-        for i, share in enumerate(shares):
-            if share not in shares_prime[i]:
-                print("file has been tampered with")
-                return False
+        try:
+            shares_prime, pw_prime = decrypt(key, response_data)
+            for i, share in enumerate(shares):
+                if share not in shares_prime[i]:
+                    print("file has been tampered with")
+                    return False
+
+        except cryptography.exceptions.InvalidTag:
+            print("wrong key for decryption: wrong password")
+            return False
 
         end_auth = time.perf_counter()
         print(f"Time taken for explicit authentication: {end_auth - start_auth:.6f} seconds")
@@ -45,9 +53,11 @@ class Client:
     def registration(self):
         print("=== User Registration ===")
         username = input("Enter username: ")
-        password = input("Enter password: ")
+        password = [int(bit) for bit in input("Enter password bits: ")]
 
         start = time.perf_counter()
+
+        print(f"your password is: {password}")
 
         registration_data = {
             "action": "register",
@@ -64,7 +74,7 @@ class Client:
     def authentication(self):
         print("=== User Authentication ===")
         username = input("Enter username: ")
-        password = [int(bit) for bit in string_to_bitstring(input("Enter password: "))]
+        password = [int(bit) for bit in input("Enter password bits: ")]
 
         start = time.perf_counter()
 
@@ -79,7 +89,13 @@ class Client:
 
         shares = self.ot_protocol(password)
 
+        print(f"your shares are: {shares}")
+
         key = self.reconstruct_secret(shares)
+
+        if key is None:
+            print("Reconstruction failed")
+            return
 
         if self.explicit_authentication(shares, key, response_data):
             print(f"SESSION KEY: {key}")
@@ -93,7 +109,7 @@ class Client:
         print("=== Reconstruction ===")
         start_recon = time.perf_counter()
         n = len(shares)
-        RSS = RobustSecretSharing(len(shares), n - 2 * 8 - 1, 8)
+        RSS = RobustSecretSharing(n, 13, 2)
         key = RSS.reconstruct_secret(shares)
         print(f"Reconstructed key: {key}")
         end_recon = time.perf_counter()
@@ -105,8 +121,8 @@ class Client:
             print("Choose an action:")
             print("1. Register")
             print("2. Authenticate")
-            print("3. Exit")
-            choice = input("Enter your choice (1/2/3): ")
+            print("any: Exit")
+            choice = input("Enter your choice: ")
 
             if choice == '1':
                 self.registration()

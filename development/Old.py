@@ -1,5 +1,4 @@
-import Math
-import random
+from utils.utils import Math
 from collections import defaultdict
 import itertools
 

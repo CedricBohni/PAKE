@@ -1,4 +1,5 @@
-import Math
+from utils.utils import Math
+
 
 class RobustSecretSharing:
     def __init__(self, n: int, t: int, e: int) -> None:
@@ -168,9 +169,9 @@ class RobustSecretSharing:
         return coefficient
 
 if __name__ == "__main__":
-    n = 12
-    t = 4
-    e = 2
+    n = 32
+    t = 16
+    e = 4
     # 3*6 + 3 =
     RSS = RobustSecretSharing(n, t, e)
     # need >= t + 2*e for reconstruction if e errors
