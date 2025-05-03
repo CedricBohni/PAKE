@@ -141,6 +141,15 @@ class ModularArithmetic:
         return self.modular_multiplication(a, self.modular_inverse(b))
 
     def pseudo_random_generator(self, seed):
+        """
+            Representative Functionality representing the generation of a pseudo-random value using modular exponentiation.
+
+            Args:
+                seed (int): The seed value for the generator.
+
+            Returns:
+                str: A hexadecimal string representing the pseudo-random value.
+        """
 
         value = pow(self.generator, seed, self.PRIME)
         output = value.to_bytes((value.bit_length() + 7) // 8, 'big')

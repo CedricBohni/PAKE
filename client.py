@@ -7,12 +7,39 @@ from utils.RSS import RobustSecretSharing
 from utils.IC import decrypt
 
 class Client:
+    """
+       A client class to handle user registration and authentication with a server.
+
+       Attributes:
+           host (str): The server's hostname or IP address.
+           port (int): The server's port number.
+           RSS (RobustSecretSharing): An instance of the RobustSecretSharing class for secret sharing operations.
+   """
+
     def __init__(self, host='127.0.0.1', port=65432):
+        """
+            Initializes the Client instance with the server's host and port.
+
+            Args:
+                host (str): The server's hostname or IP address. Defaults to '127.0.0.1'.
+                port (int): The server's port number. Defaults to 65432.
+        """
+
         self.host = host
         self.port = port
         self.RSS = RobustSecretSharing(16, 13, 2)
 
     def send_request(self, data):
+        """
+            Sends a JSON-encoded request to the server and receives a response.
+
+            Args:
+                data (dict): The data to send to the server.
+
+            Returns:
+                str: The server's response as a string.
+        """
+
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((self.host, self.port))
             payload = json.dumps(data)
@@ -21,6 +48,10 @@ class Client:
         return response
 
     def start(self):
+        """
+            Starts the client application, allowing the user to choose between registration and authentication.
+        """
+
         while True:
             print("Choose an action:")
             print("1. Register")
@@ -37,10 +68,13 @@ class Client:
                 break
 
     def registration(self):
+        """
+            Handles user registration by collecting a username and password, and sending the data to the server.
+        """
 
         print("=== User Registration ===")
         username = input("Enter username: ")
-        password = [int(bit) for bit in input("Enter password bits: ")]
+        password = [int(bit) for bit in input("Enter 16-bit password: ")]
 
         start = time.perf_counter()
 
@@ -57,10 +91,22 @@ class Client:
         print(f"Time taken for registration: {end - start:.6f} seconds")
 
     def authentication(self):
+        """
+            Handles user authentication by collecting a username and password, and verifying the response from the server.
+
+            The method performs the following steps:
+            - Sends authentication username to the server.
+            - Receives and processes the server's response.
+            - Uses the receiver OT protocol to obtain shares of the password.
+            - Reconstructs a secret key using the received shares.
+            - Decrypts the server's response and verifies the password.
+            - Generates a session key if authentication is successful.
+        """
+
 
         print("=== User Authentication ===")
         username = input("Enter username: ")
-        password = [int(bit) for bit in input("Enter password bits: ")]
+        password = [int(bit) for bit in input("Enter 16-bit password: ")]
 
         start = time.perf_counter()
 
@@ -70,6 +116,11 @@ class Client:
         }
 
         response = self.send_request(auth_data)
+
+        if response == "User not found":
+            print("Error: The user is not registered.")
+            return
+
         ciphertext = json.loads(response)
         print(f"\nServer response: {ciphertext}")
 
