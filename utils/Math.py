@@ -6,8 +6,9 @@ FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22
 514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6
 F44C42E9A63A3620FFFFFFFFFFFFFFFF
 """.replace("\n", "").replace(" ", "")
-p = int(p_hex, 16)
-g= 2
+p = 111485459220781859999 #int(p_hex, 16) # this is a safe prime with 2618,163402417×21290000−1 as a sophie germain prime
+subgroup_p = 55742729610390929999
+g= 2#4
 
 class ModularArithmetic:
     """
@@ -18,7 +19,7 @@ class ModularArithmetic:
         PRIME (int): The prime modulus for arithmetic operations.
     """
 
-    def __init__(self, generator: int = g, PRIME: int = p) -> None:
+    def __init__(self, generator: int = g, PRIME: int = p, sub_PRIME: int=subgroup_p) -> None:
         """
         Initialize the ModularArithmetic instance.
 
@@ -28,6 +29,7 @@ class ModularArithmetic:
         """
         self.generator = generator
         self.PRIME = PRIME
+        self.sub_PRIME = subgroup_p
 
     def mod(self, a: int) -> int:
         """

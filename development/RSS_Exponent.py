@@ -58,13 +58,15 @@ class RobustSecretSharing:
             x_values, y_values = zip(*subset)
             try:
                 x_values, y_values = zip(*subset)
-                secret = 0
+                secret = 1
                 for i in range(self.t):
                     lagrange_coeff = self.lagrange_coefficient(list(x_values), i)
-                    secret = self.Math.modular_addition(secret,
-                                                        self.Math.modular_multiplication(y_values[i], lagrange_coeff))
+                    exp = lagrange_coeff % self.Math.sub_PRIME
+                    g_term =  self.Math.modular_exponentiation(y_values[i], exp)
+                    secret = self.Math.modular_multiplication(secret,g_term)
                 seen[secret] += 1
-            except Exception:
+            except Exception as e:
+                print("Error in reconstruction:", e)
                 continue
 
         if seen:
@@ -79,24 +81,33 @@ class RobustSecretSharing:
         return None
 
     def lagrange_coefficient(self, x_values: list[int], i: int) -> int:
-        coefficient = 1
+        num = 1
+        denom = 1
         for j in range(len(x_values)):
             if i != j:
-                coefficient = self.Math.modular_multiplication(coefficient, self.Math.modular_division(self.Math.mod(x_values[j]), self.Math.modular_subtraction(x_values[j], x_values[i])))
-        return coefficient
+                num = (num * x_values[j]) % self.Math.sub_PRIME
+                denom = (denom * (x_values[j] - x_values[i])) % self.Math.sub_PRIME
 
+        denom_inv = pow(denom, -1, self.Math.sub_PRIME)
+        return (num * denom_inv) % self.Math.sub_PRIME
 if __name__ == "__main__":
     n = 16
     t = 13
     e = 2
 
     RSS = RobustSecretSharing(n, t, e)
-    secret = RSS.Math.generate_random_int()
+    secret = 10 #RSS.Math.generate_random_int()
     print(f"secret: ", secret)
     shares = RSS.generate_shares(secret)
-
-    print("=== Shares ===")
     print("Shares: ", shares)
+
+    secret = RSS.Math.modular_generator_exponentiation(secret)
+
+    print("=== Exponent ===")
+    print("Exponent Secret: ", secret)
+    for i in range(len(shares)):
+        shares[i] = RSS.Math.modular_generator_exponentiation(shares[i])
+    print("exponent Shares: ", shares)
 
     print("1. ✅ Reconstruct the secret from all shares")
     used_shares = shares
@@ -141,15 +152,15 @@ if __name__ == "__main__":
     reconstruct_secret = RSS.reconstruct_secret(used_shares)
     print("Reconstructed Secret: ", reconstruct_secret)
 
-    print("9. ✅ Reconstruct randomized shares")
-    random_secret = RSS.Math.generate_random_int()
-    print(f"random_secret: {random_secret}")
-    random_shares = RSS.generate_shares(random_secret)
-    new_secret = RSS.Math.modular_addition(secret, random_secret)
-    print("new secret: ", new_secret)
-    new_shares = [None] * n
-    for i in range(len(random_shares)):
-       new_shares[i] = RSS.Math.modular_addition(shares[i], random_shares[i])
-
-    reconstruct_secret = RSS.reconstruct_secret(new_shares)
-    print("Reconstructed Secret: ", reconstruct_secret)
+    # print("9. ✅ Reconstruct randomized shares")
+    # random_secret = RSS.Math.generate_random_int()
+    # print(f"random_secret: {random_secret}")
+    # random_shares = RSS.generate_shares(random_secret)
+    # new_secret = RSS.Math.modular_addition(secret, random_secret)
+    # print("new secret: ", new_secret)
+    # new_shares = [None] * n
+    # for i in range(len(random_shares)):
+    #    new_shares[i] = RSS.Math.modular_addition(shares[i], random_shares[i])
+    #
+    # reconstruct_secret = RSS.reconstruct_secret(new_shares)
+    # print("Reconstructed Secret: ", reconstruct_secret)
