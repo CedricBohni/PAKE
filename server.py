@@ -2,7 +2,7 @@ import json
 import socket
 from utils.ot_protocol import sender_ot
 from mpyc.runtime import mpc
-from utils.RSS import RobustSecretSharing
+from utils.RSS_Exponent import RobustSecretSharing
 from utils.Math import ModularArithmetic
 from utils.IC import encrypt
 import time
@@ -18,7 +18,7 @@ class Server:
            RSS (RobustSecretSharing): An instance of the RobustSecretSharing class for secret sharing operations.
    """
 
-    def __init__(self, host='127.0.0.1', port=65432):
+    def __init__(self, host='127.0.0.1', port=65431):
         """
             Initializes the Server instance with the server's host and port.
 
@@ -29,7 +29,7 @@ class Server:
         self.HOST = host
         self.PORT = port
         self.Math = ModularArithmetic()
-        self.RSS = RobustSecretSharing(16, 13, 2)
+        self.RSS = RobustSecretSharing(8, 6, 1)
 
     def start(self):
         """
@@ -114,24 +114,30 @@ class Server:
         - Logs the time taken for the registration process.
         """
 
-        if username and password and len(password) == 16:
+        if username and password and len(password) == 8:
 
-            k = self.Math.generate_random_int()
+            k = self.Math.generate_random_int(sub=True)
+            print("Generated secret k:", k)
             k_shares = self.RSS.generate_shares(k)
 
-            shares = [(None, None)] * 16
+            k_exponent = self.Math.modular_generator_exponentiation(k)
+            print(password)
+            password_int = int("".join(map(str, password)), 2)
+            print("password:", password_int)
+            pw_exponent = self.Math.modular_generator_exponentiation(password_int)
 
-            for i in range(16):
+            shares = [(None, None)] * 8
+            for i in range(8):
                 password_bit = password[i]
-                k_i = k_shares[i]
-                r_i = self.Math.generate_random_int()
+                k_i = self.Math.modular_generator_exponentiation(k_shares[i])
+                r_i = self.Math.modular_generator_exponentiation(self.Math.generate_random_int(sub=True))
                 if password_bit == 0:
                     shares[i] = (k_i, r_i)
                 else:
                     shares[i] = (r_i, k_i)
 
             with open(f"userFiles/{username}_file.json", "w") as f:
-                json.dump({"shares": shares, "pw": ''.join(map(str, password)), "k": k}, f)
+                json.dump({"shares": shares, "pw": pw_exponent, "k": k_exponent}, f)
 
             conn.sendall("Registration successful".encode())
 
@@ -171,33 +177,35 @@ class Server:
                 return
 
             shares = file["shares"]
-            k = file["k"]
-            password = file["pw"]
+            k_exponent = file["k"]
+            password_exponent = file["pw"]
 
-            random_secret = self.Math.generate_random_int()
+            random_secret = self.Math.generate_random_int(sub=True)
             random_secret_shares = self.RSS.generate_shares(random_secret)
 
-            randomized_k = self.Math.modular_addition(k, random_secret)
+            random_exponent = self.Math.modular_generator_exponentiation(random_secret)
 
-            randomized_shares = [(None, None)] * 16
-            for i in range(16):
-                k_i = shares[i][0]
-                r_i = shares[i][1]
-                randomized_shares[i] = (self.Math.modular_addition(k_i, random_secret_shares[i]),
-                                        self.Math.modular_addition(r_i, random_secret_shares[i]))
+            randomized_k_exponent = self.Math.modular_multiplication(k_exponent, random_exponent)
+
+            randomized_shares = [(None, None)] * 8
+            for i in range(8):
+                zero_i = shares[i][0]
+                one_i = shares[i][1]
+                randomized_shares[i] = (self.Math.modular_multiplication(zero_i, self.Math.modular_generator_exponentiation(random_secret_shares[i])),
+                                        self.Math.modular_multiplication(one_i, self.Math.modular_generator_exponentiation(random_secret_shares[i])))
 
 
             json_shares = [list(pair) for pair in randomized_shares]
             data = json.dumps({
                 "shares": json_shares,
-                "pw": password
+                "pw": password_exponent
             })
 
-            ciphertext = encrypt(randomized_k, data)
+            ciphertext = encrypt(randomized_k_exponent, data)
 
             conn.sendall(ciphertext.encode())
 
-            session_key = self.Math.pseudo_random_generator(randomized_k)
+            session_key = self.Math.pseudo_random_generator(randomized_k_exponent)
 
             mpc.run(sender_ot(randomized_shares))
 
