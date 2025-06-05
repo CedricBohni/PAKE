@@ -1,7 +1,5 @@
 import json
 import socket
-from utils.ot_protocol import sender_ot
-from mpyc.runtime import mpc
 from utils.RSS_Exponent import RobustSecretSharing
 from utils.Math import ModularArithmetic
 from utils.IC import encrypt
@@ -18,7 +16,7 @@ class Server:
            RSS (RobustSecretSharing): An instance of the RobustSecretSharing class for secret sharing operations.
    """
 
-    def __init__(self, host='127.0.0.1', port=65431):
+    def __init__(self, host='127.0.0.1', port=65438):
         """
             Initializes the Server instance with the server's host and port.
 
@@ -30,7 +28,13 @@ class Server:
         self.PORT = port
         self.Math = ModularArithmetic()
         self.RSS = RobustSecretSharing(8, 6, 1)
-
+        self.temp_shares = [(None, None)] * 8
+        self.request_counter = 0
+        self.N = 12000991551859018265872407496869639382864790287669785722210322332355258447403853342474429805696877488833857305762518590969878052344745850541503850065903633
+        self.e = 65537
+        self.d = 11862920727285087512672416724441244612053186889941738688709451327600755420573868763412620915039546779273239567721613654909753857882486728158879371802110993
+        self.x0 = 0
+        self.x1 = 0
     def start(self):
         """
             Starts the server to listen for incoming client connections.
@@ -82,10 +86,13 @@ class Server:
             action = message.get("action")
             username = message.get("username")
             password = message.get("password")
+            v = message.get("v")
+            bit = message.get("i")
 
             actions = {
                 "register": lambda: self.handle_registration(conn, username, password, start),
-                "authenticate": lambda: self.handle_authentication(conn, username, start)
+                "authenticate": lambda: self.handle_authentication(conn, username, start),
+                "ot": lambda: self.handle_ot(conn, v, bit)
             }
 
             if action in actions:
@@ -201,13 +208,23 @@ class Server:
                 "pw": password_exponent
             })
 
-            ciphertext = encrypt(randomized_k_exponent, data)
+            self.x0 = self.Math.generate_random_int()
+            self.x1 = self.Math.generate_random_int()
+
+            ciphertext = json.dumps({
+                "cipher": encrypt(randomized_k_exponent, data),
+                "x_0": self.x0,
+                "x_1": self.x1
+            })
+
+            self.request_counter = 0
+            self.temp_shares = randomized_shares
 
             conn.sendall(ciphertext.encode())
 
             session_key = self.Math.pseudo_random_generator(randomized_k_exponent)
 
-            mpc.run(sender_ot(randomized_shares))
+             # mpc.run(sender_ot(randomized_shares))
 
             print(f"SESSION KEY: {session_key}")
 
@@ -216,6 +233,36 @@ class Server:
 
         else:
          conn.sendall("Invalid authentication data".encode())
+
+    def handle_ot(self, conn, v, bit):
+        if self.request_counter >= 8:
+            conn.sendall("Too many requests".encode())
+            return
+
+        share_tuple = self.temp_shares[bit]
+
+        k0 = pow((v - self.x0), self.d, self.N)
+        k1 = pow((v - self.x1), self.d, self.N)
+
+        cipher0 = (share_tuple[0] + k0) % self.N
+        cipher1 = (share_tuple[1] + k1) % self.N
+
+        self.x0 = self.Math.generate_random_int()
+        self.x1 = self.Math.generate_random_int()
+
+        data = json.dumps({
+            "c0": cipher0,
+            "c1": cipher1,
+            "x0": self.x0,
+            "x1": self.x1,
+        })
+
+        conn.sendall(data.encode())
+
+        self.request_counter += 1
+        if self.request_counter >= 8:
+            self.temp_shares = []
+        return
 
 if __name__ == "__main__":
     server = Server()

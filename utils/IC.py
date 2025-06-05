@@ -42,9 +42,8 @@ def decrypt(key: int, cipher: dict[str, str]):
     """
 
     key_bytes = sha256(str(key).encode()).digest()
-
-    nonce = bytes.fromhex(cipher["nonce"])
-    ciphertext = bytes.fromhex(cipher["ciphertext"])
+    nonce = bytes.fromhex(cipher.get("nonce"))
+    ciphertext = bytes.fromhex(cipher.get("ciphertext"))
 
     aesgcm = AESGCM(key_bytes)
     decrypted_data = aesgcm.decrypt(nonce, ciphertext, None)

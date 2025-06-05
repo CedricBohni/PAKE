@@ -1,8 +1,6 @@
 import json
 import socket
 import time
-from utils.ot_protocol import receiver_ot
-from mpyc.runtime import mpc
 from utils.RSS_Exponent import RobustSecretSharing
 from utils.IC import decrypt
 
@@ -16,7 +14,7 @@ class Client:
            RSS (RobustSecretSharing): An instance of the RobustSecretSharing class for secret sharing operations.
    """
 
-    def __init__(self, host='127.0.0.1', port=65431):
+    def __init__(self, host='127.0.0.1', port=65438):
         """
             Initializes the Client instance with the server's host and port.
 
@@ -28,6 +26,8 @@ class Client:
         self.host = host
         self.port = port
         self.RSS = RobustSecretSharing(8, 6, 1)
+        self.N = 12000991551859018265872407496869639382864790287669785722210322332355258447403853342474429805696877488833857305762518590969878052344745850541503850065903633
+        self.e = 65537
 
     def send_request(self, data):
         """
@@ -121,10 +121,12 @@ class Client:
             print("Error: The user is not registered.")
             return
 
-        ciphertext = json.loads(response)
-        print(f"\nServer response: {ciphertext}")
+        response_json = json.loads(response)
+        ciphertext = json.loads(response_json.get("cipher"))
+        x_0 = response_json.get("x_0")
+        x_1 = response_json.get("x_1")
 
-        shares = mpc.run(receiver_ot(password))
+        shares = self.oblivious_transfer(password, x_0, x_1)
         key = self.RSS.reconstruct_secret(shares)
 
         if key is None:
@@ -136,13 +138,12 @@ class Client:
         cipher_shares = [tuple(pair) for pair in decrypted_data["shares"]]
         cipher_password = decrypted_data["pw"]
 
-        # file_password = [0] * (8 - len(bin(cipher_password)[2:])) + [int(bit) for bit in bin(cipher_password)[2:]]
+        close_passwords = passwords_with_hamming_distance_1(password)
+        close_passwords_int_exponent = [self.RSS.Math.modular_generator_exponentiation(int("".join(map(str, pw)), 2)) for pw in close_passwords ]
 
-        # hamming_distance = sum(p1 != p2 for p1, p2 in zip(password, file_password))
-
-        # if hamming_distance > 1:
-        #     key = self.RSS.Math.generate_random_int()
-        #     print("password is not in hamming distance")
+        if not cipher_password in close_passwords_int_exponent:
+            key = self.RSS.Math.generate_random_int()
+            print("password is not in hamming distance")
 
         for i in range(8):
             passwd_bit = password[i]
@@ -156,6 +157,44 @@ class Client:
 
         end = time.perf_counter()
         print(f"Time taken for authentication: {end - start:.6f} seconds")
+
+    def oblivious_transfer(self, password, first_x_0, first_x_1):
+        shares = []
+        x0 = first_x_0
+        x1 = first_x_1
+        for i in range(8):
+
+            k = self.RSS.Math.generate_random_int()
+            if password[i] == 0:
+                v = (x0 + pow(k, self.e, self.N)) % self.N
+            else:
+                v = (x1 + pow(k, self.e, self.N)) % self.N
+            ot_data = {
+                "action": "ot",
+                "v": v,
+                "i": i
+            }
+            response = json.loads(self.send_request(ot_data))
+
+            if response == "Too many requests":
+                print("Error: Too many requests")
+                break
+
+            x0 = response["x0"]
+            x1 = response["x1"]
+            cipher = response[f"c{password[i]}"]
+
+            shares.append((cipher - k) % self.N)
+
+        return shares
+
+def passwords_with_hamming_distance_1(password):
+    result = [password]
+    for i in range(len(password)):
+        new_password = password[:]
+        new_password[i] = 1 - new_password[i]
+        result.append(new_password)
+    return result
 
 if __name__ == '__main__':
     client = Client()

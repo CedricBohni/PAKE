@@ -4,12 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f41f9aa0-0a2d-419f-8c05-75adfc6e8015" name="Changes" comment="in exponent attempt">
+    <list default="true" id="f41f9aa0-0a2d-419f-8c05-75adfc6e8015" name="Changes" comment="in exponent">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client.py" beforeDir="false" afterPath="$PROJECT_DIR$/client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/development/RSS_Exponent.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/RSS_Exponent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ot_helper.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/server.py" beforeDir="false" afterPath="$PROJECT_DIR$/server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/Math.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/Math.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/IC.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/IC.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/ot_protocol.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,40 +48,40 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.Berlekamp-Welch (1).executor": "Run",
-    "Python.Brute_force (1).executor": "Run",
-    "Python.Old.executor": "Run",
-    "Python.RSS (1).executor": "Run",
-    "Python.RSS.executor": "Run",
-    "Python.RSS_Exponent (1).executor": "Run",
-    "Python.RSS_Exponent.executor": "Run",
-    "Python.RSS_no_brute_force.executor": "Run",
-    "Python.client.executor": "Run",
-    "Python.crypto_utils.executor": "Run",
-    "Python.ot_helper.executor": "Run",
-    "Python.python client.py -M 3 -I 2.executor": "Run",
-    "Python.python ot_helper.py -M 3 -I 0.executor": "Run",
-    "Python.python ot_protocol.py -M 3 -I 0.executor": "Run",
-    "Python.python server.py -M 3 -I 1.executor": "Run",
-    "Python.server.executor": "Run",
-    "Python.test.executor": "Run",
-    "Python.test_2.executor": "Run",
-    "Python.utils.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "G:/Projects/faPAKE/development",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.Berlekamp-Welch (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.Brute_force (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.Old.executor&quot;: &quot;Run&quot;,
+    &quot;Python.RSS (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.RSS.executor&quot;: &quot;Run&quot;,
+    &quot;Python.RSS_Exponent (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.RSS_Exponent.executor&quot;: &quot;Run&quot;,
+    &quot;Python.RSS_no_brute_force.executor&quot;: &quot;Run&quot;,
+    &quot;Python.client.executor&quot;: &quot;Run&quot;,
+    &quot;Python.crypto_utils.executor&quot;: &quot;Run&quot;,
+    &quot;Python.ot_helper.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python client.py -M 3 -I 2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python ot_helper.py -M 3 -I 0.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python ot_protocol.py -M 3 -I 0.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python server.py -M 3 -I 1.executor&quot;: &quot;Run&quot;,
+    &quot;Python.server.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.utils.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;G:/Projects/faPAKE/development&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="G:\Projects\faPAKE\development" />
@@ -92,7 +94,30 @@
       <recent name="G:\Projects\faPAKE\development" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.RSS_Exponent (1)">
+  <component name="RunManager" selected="Python.RSS">
+    <configuration name="RSS" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="faPAKE" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/utils" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/RSS.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="RSS_Exponent (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="faPAKE" />
       <option name="ENV_FILES" value="" />
@@ -185,36 +210,13 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="server" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="faPAKE" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/server.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.RSS_Exponent (1)" />
-        <item itemvalue="Python.python ot_helper.py -M 3 -I 0" />
         <item itemvalue="Python.python client.py -M 3 -I 2" />
         <item itemvalue="Python.python server.py -M 3 -I 1" />
-        <item itemvalue="Python.server" />
+        <item itemvalue="Python.RSS" />
+        <item itemvalue="Python.python ot_helper.py -M 3 -I 0" />
+        <item itemvalue="Python.RSS_Exponent (1)" />
       </list>
     </recent_temporary>
   </component>
@@ -259,7 +261,8 @@
       <workItem from="1746306295349" duration="6155000" />
       <workItem from="1746346689234" duration="2569000" />
       <workItem from="1746434498689" duration="4277000" />
-      <workItem from="1749035851463" duration="27738000" />
+      <workItem from="1749035851463" duration="28638000" />
+      <workItem from="1749124412761" duration="18185000" />
     </task>
     <task id="LOCAL-00001" summary="Initial setup">
       <option name="closed" value="true" />
@@ -349,7 +352,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746349248642</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="in exponent">
+      <option name="closed" value="true" />
+      <created>1749080697712</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1749080697712</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -378,23 +389,24 @@
     <MESSAGE value="hamming distance check" />
     <MESSAGE value="documentatnion and more development" />
     <MESSAGE value="in exponent attempt" />
-    <option name="LAST_COMMIT_MESSAGE" value="in exponent attempt" />
+    <MESSAGE value="in exponent" />
+    <option name="LAST_COMMIT_MESSAGE" value="in exponent" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/faPAKE$crypto_utils.coverage" NAME="crypto_utils Coverage Results" MODIFIED="1745598455301" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$Brute_force__1_.coverage" NAME="Brute_force (1) Coverage Results" MODIFIED="1746003037536" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$RSS_no_brute_force.coverage" NAME="RSS_no_brute_force Coverage Results" MODIFIED="1746311895835" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/development" />
-    <SUITE FILE_PATH="coverage/faPAKE$python_client_py__M_3__I_2.coverage" NAME="python client.py -M 3 -I 2 Coverage Results" MODIFIED="1749078686006" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/faPAKE$python_client_py__M_3__I_2.coverage" NAME="python client.py -M 3 -I 2 Coverage Results" MODIFIED="1749157545916" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$test.coverage" NAME="test Coverage Results" MODIFIED="1745878647911" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/faPAKE$python_server_py__M_3__I_1.coverage" NAME="python server.py -M 3 -I 1 Coverage Results" MODIFIED="1749078684606" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/faPAKE$python_server_py__M_3__I_1.coverage" NAME="python server.py -M 3 -I 1 Coverage Results" MODIFIED="1749156068687" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$Old.coverage" NAME="Old Coverage Results" MODIFIED="1745879334663" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$server.coverage" NAME="server Coverage Results" MODIFIED="1749073353668" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$RSS__1_.coverage" NAME="RSS (1) Coverage Results" MODIFIED="1746308239791" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
-    <SUITE FILE_PATH="coverage/faPAKE$python_ot_helper_py__M_3__I_0.coverage" NAME="python ot_helper.py -M 3 -I 0 Coverage Results" MODIFIED="1749078687478" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/faPAKE$python_ot_helper_py__M_3__I_0.coverage" NAME="python ot_helper.py -M 3 -I 0 Coverage Results" MODIFIED="1749138378822" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$test_2.coverage" NAME="test_2 Coverage Results" MODIFIED="1745878041286" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$client.coverage" NAME="client Coverage Results" MODIFIED="1745317612452" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$RSS_Exponent__1_.coverage" NAME="RSS_Exponent (1) Coverage Results" MODIFIED="1749079608820" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
-    <SUITE FILE_PATH="coverage/faPAKE$RSS.coverage" NAME="RSS Coverage Results" MODIFIED="1746348556594" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
+    <SUITE FILE_PATH="coverage/faPAKE$RSS.coverage" NAME="RSS Coverage Results" MODIFIED="1749150005663" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
     <SUITE FILE_PATH="coverage/faPAKE$python_ot_protocol_py__M_3__I_0.coverage" NAME="python ot_protocol.py -M 3 -I 0 Coverage Results" MODIFIED="1745861844231" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/faPAKE$RSS_Exponent.coverage" NAME="RSS_Exponent Coverage Results" MODIFIED="1749072139005" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/development" />
     <SUITE FILE_PATH="coverage/faPAKE$Berlekamp_Welch__1_.coverage" NAME="Berlekamp-Welch (1) Coverage Results" MODIFIED="1745998686026" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
