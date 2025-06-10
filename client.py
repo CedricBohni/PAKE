@@ -7,37 +7,23 @@ from utils.IC import decrypt
 class Client:
     """
        A client class to handle user registration and authentication with a server.
+    """
 
-       Attributes:
-           host (str): The server's hostname or IP address.
-           port (int): The server's port number.
-           RSS (RobustSecretSharing): An instance of the RobustSecretSharing class for secret sharing operations.
-   """
-
-    def __init__(self, host='127.0.0.1', port=65438):
+    def __init__(self, host='127.0.0.1', port=65432):
         """
             Initializes the Client instance with the server's host and port.
-
-            Args:
-                host (str): The server's hostname or IP address. Defaults to '127.0.0.1'.
-                port (int): The server's port number. Defaults to 65432.
         """
 
         self.host = host
         self.port = port
         self.RSS = RobustSecretSharing(8, 6, 1)
+        # The following values are used for RSA encryption/decryptions in the oblivious transfer protocol.
         self.N = 12000991551859018265872407496869639382864790287669785722210322332355258447403853342474429805696877488833857305762518590969878052344745850541503850065903633
         self.e = 65537
 
     def send_request(self, data):
         """
-            Sends a JSON-encoded request to the server and receives a response.
-
-            Args:
-                data (dict): The data to send to the server.
-
-            Returns:
-                str: The server's response as a string.
+            Sends a JSON-encoded request to the server and receives a response.ss
         """
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -49,7 +35,12 @@ class Client:
 
     def start(self):
         """
-            Starts the client application, allowing the user to choose between registration and authentication.
+            Starts the client application.
+
+            The method performs the following steps:
+            - Displays a menu for the user to choose between registration, authentication, or exit.
+            - Calls the appropriate method based on the user's choice.
+            - Exits the application if the user selects an invalid option or chooses to exit.
         """
 
         while True:
@@ -69,7 +60,13 @@ class Client:
 
     def registration(self):
         """
-            Handles user registration by collecting a username and password, and sending the data to the server.
+            Handles the registration process for a new user.
+
+            The method performs the following steps:
+            - Prompts the user to enter a username and an 8-bit password.
+            - Sends the registration data to the server in JSON format.
+            - Receives and displays the server's response.
+            - Logs the time taken for the registration process.
         """
 
         print("=== User Registration ===")
@@ -96,7 +93,7 @@ class Client:
 
             The method performs the following steps:
             - Sends authentication username to the server.
-            - Receives and processes the server's response.
+            - Receives and processes the server's response, getting the ciphertext.
             - Uses the receiver OT protocol to obtain shares of the password.
             - Reconstructs a secret key using the received shares.
             - Decrypts the server's response and verifies the password.
@@ -159,6 +156,16 @@ class Client:
         print(f"Time taken for authentication: {end - start:.6f} seconds")
 
     def oblivious_transfer(self, password, first_x_0, first_x_1):
+        """
+            Performs the Oblivious Transfer protocol to obtain shares of the password.
+
+            The method performs the following steps:
+            - Initializes variables for the first x_0 and x_1 values.
+            - Iterates over each bit of the password.
+            - For each bit, generates a random integer k and computes v based on the password bit.
+            - Sends an OT request to the server and receives a response containing new x_0, x_1, and cipher values.
+            - Collects shares based on the received cipher values.
+        """
         shares = []
         x0 = first_x_0
         x1 = first_x_1
@@ -189,6 +196,10 @@ class Client:
         return shares
 
 def passwords_with_hamming_distance_1(password):
+    """
+    Generates all possible passwords that have a Hamming distance of 1 from the given password.
+    """
+
     result = [password]
     for i in range(len(password)):
         new_password = password[:]

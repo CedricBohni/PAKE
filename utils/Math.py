@@ -2,16 +2,31 @@ import random
 from sympy import mod_inverse
 
 
-# p =  47 # needs to be kq+1
+
+# p = 47
 # q = 23
 # g= 25
-p = 209459
-q = 104729
-g = 4
 # p = 53919893334301279589334030174039261347115832520052616287020132597763
 # q = 26959946667150639794667015087019630673557916260026308143510066298881
 # g = 4
+
+p = 209459
+q = 104729
+g = 4
+
 class ModularArithmetic:
+    """
+    The ModularArithmetic class provides methods for performing modular arithmetic operations.
+
+    Key Components:
+        PRIME: The main prime modulus used for modular operations.
+        sub_PRIME: A smaller prime modulus representing a subgroup of the main group.
+        generator: A base value used for modular exponentiation and pseudo-random generation.
+        sub Boolean:
+        sub=True: Indicates operations should use the subgroup modulus (sub_PRIME).
+        sub=False: Indicates operations should use the main prime modulus (PRIME).
+        This flexibility allows the class to perform operations in either the main group or its subgroup, depending on the context.
+    """
 
     def __init__(self, generator: int = g, PRIME: int = p, sub_PRIME: int=q) -> None:
 

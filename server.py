@@ -7,34 +7,29 @@ import time
 
 class Server:
     """
-       A server class to handle user registration and authentication.
-
-       Attributes:
-           HOST (str): The server's hostname or IP address.
-           PORT (int): The server's port number.
-           Math (ModularArithmetic): An instance of the ModularArithmetic class for mathematical operations.
-           RSS (RobustSecretSharing): An instance of the RobustSecretSharing class for secret sharing operations.
+       A server class to handle user registration and authentication
    """
 
-    def __init__(self, host='127.0.0.1', port=65438):
+    def __init__(self, host='127.0.0.1', port=65432):
         """
-            Initializes the Server instance with the server's host and port.
-
-            Args:
-                host (str): The server's hostname or IP address. Defaults to '127.0.0.1'.
-                port (int): The server's port number. Defaults to 65432.
+            Initializes the Server instance with the specified host and port,
+            and sets up the necessary cryptographic and mathematical components.
         """
         self.HOST = host
         self.PORT = port
         self.Math = ModularArithmetic()
         self.RSS = RobustSecretSharing(8, 6, 1)
-        self.temp_shares = [(None, None)] * 8
-        self.request_counter = 0
+        # RSA parameters for oblivious transfer protocol
         self.N = 12000991551859018265872407496869639382864790287669785722210322332355258447403853342474429805696877488833857305762518590969878052344745850541503850065903633
         self.e = 65537
         self.d = 11862920727285087512672416724441244612053186889941738688709451327600755420573868763412620915039546779273239567721613654909753857882486728158879371802110993
+        # Initialize x0 and x1 for oblivious transfer
         self.x0 = 0
         self.x1 = 0
+        # temporary shares for oblivious transfer and tracking requests
+        self.temp_shares = [(None, None)] * 8
+        self.request_counter = 0
+
     def start(self):
         """
             Starts the server to listen for incoming client connections.
@@ -69,16 +64,11 @@ class Server:
             Handles incoming client requests by decoding the data, determining the action,
             and delegating to the appropriate handler method.
 
-            Args:
-                conn (socket): The client connection object.
-                data (bytes): The raw data received from the client.
-                start (float): The timestamp when the request was received.
-
-            The method performs the following steps:
-            - Decodes the JSON-encoded data from the client.
-            - Extracts the action, username, and password from the data.
-            - Delegates the request to either the registration or authentication handler based on the action.
-            - Sends an error response if the action is invalid or the data is malformed.
+            Steps:
+            1. Decode the JSON-encoded data from the client.
+            2. Extract the action, username, password, and other relevant fields.
+            3. Delegate the request to the appropriate handler based on the action.
+            4. Send an error response if the action is invalid or the data is malformed.
         """
 
         try:
@@ -158,18 +148,13 @@ class Server:
         """
             Handles the authentication of a user.
 
-            Args:
-                conn (socket): The client connection object.
-                username (str): The username provided by the client.
-                start (float): The timestamp when the authentication request was received.
-
             The method performs the following steps:
-            - Reads the user's stored file containing shares, password, and secret `k`.
+            - Reads the user's stored file containing exponentiated shares, password, and secret.
             - Generates a random secret and its shares.
-            - Randomizes the stored secret `k` and its shares using the random secret.
-            - Encrypts the randomized shares and password using the randomized secret `k`.
+            - Randomizes the stored secret and its shares using the random secret.
+            - Encrypts the randomized shares and password using the randomized secret.
             - Sends the encrypted data to the client.
-            - Generates a session key using the randomized secret `k`.
+            - Generates a session key using the randomized secret.
             - Executes the sender oblivious transfer protocol.
             - Logs the session key and the time taken for the authentication process.
         """
@@ -198,8 +183,9 @@ class Server:
             for i in range(8):
                 zero_i = shares[i][0]
                 one_i = shares[i][1]
-                randomized_shares[i] = (self.Math.modular_multiplication(zero_i, self.Math.modular_generator_exponentiation(random_secret_shares[i])),
-                                        self.Math.modular_multiplication(one_i, self.Math.modular_generator_exponentiation(random_secret_shares[i])))
+                exponent_share = self.Math.modular_generator_exponentiation(random_secret_shares[i])
+                randomized_shares[i] = (self.Math.modular_multiplication(zero_i, exponent_share),
+                                        self.Math.modular_multiplication(one_i, exponent_share))
 
 
             json_shares = [list(pair) for pair in randomized_shares]
@@ -224,8 +210,6 @@ class Server:
 
             session_key = self.Math.pseudo_random_generator(randomized_k_exponent)
 
-             # mpc.run(sender_ot(randomized_shares))
-
             print(f"SESSION KEY: {session_key}")
 
             end = time.perf_counter()
@@ -235,6 +219,16 @@ class Server:
          conn.sendall("Invalid authentication data".encode())
 
     def handle_ot(self, conn, v, bit):
+        """
+            Handles the Oblivious Transfer (OT) request from the client.
+
+            The method performs the following steps:
+            - Validates the bit index and checks if the request limit has been reached.
+            - Retrieves the share tuple based on the provided bit.
+            - Computes the cipher values using the provided value `v` and the server's x0 and x1.
+            - Updates x0 and x1 with new random integers.
+            - Sends the computed cipher values and updated x0, x1 to the client.
+        """
         if self.request_counter >= 8:
             conn.sendall("Too many requests".encode())
             return

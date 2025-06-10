@@ -3,27 +3,6 @@ from sympy import Matrix, symbols, Poly, div
 from sympy.abc import x as x_sympy
 
 class RobustSecretSharing:
-    """
-        A class implementing Robust Secret Sharing (RSS) with error correction.
-
-        Attributes:
-            n (int): Total number of shares.
-            t (int): Threshold number of shares required to reconstruct the secret.
-            e (int): Maximum number of erroneous shares that can be tolerated.
-
-        Methods:
-            generate_shares(secret: int) -> list[int]:
-                Generates `n` shares for the given secret using a polynomial of degree `t-1`.
-
-            evaluate_polynomial(coefficients: list[int], x: int) -> int:
-                Evaluates a polynomial at a given x-coordinate.
-
-            reconstruct_secret(shares: list[int]) -> int | None:
-                Reconstructs the secret from the given shares, handling errors if possible.
-
-            lagrange_coefficient(x_values: list[int], i: int) -> int:
-                Computes the Lagrange coefficient for a given index `i` in the interpolation process.
-    """
 
     def __init__(self, n: int, t: int, e: int) -> None:
         self.n = n
