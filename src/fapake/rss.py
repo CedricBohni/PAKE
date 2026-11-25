@@ -6,6 +6,7 @@ shares are tolerated by trying every subset of size ``t`` and taking a strict ma
 """
 
 from collections import defaultdict
+from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
 from itertools import combinations
@@ -35,6 +36,13 @@ def _integer_lagrange_table(m: int, t: int) -> tuple[int, list[tuple[tuple[int, 
     fractions = [[_lagrange_at_zero(xs, i) for i in range(t)] for xs in subsets]
     D = lcm(*(f.denominator for row in fractions for f in row))
     return D, [(xs, [int(f * D) for f in row]) for xs, row in zip(subsets, fractions)]
+
+
+@dataclass(frozen=True)
+class Vote:
+    """The value one t-subset of shares interpolates to (scaled by D, see votes())."""
+    xs: tuple[int, ...]
+    value: int
 
 
 class RobustSecretSharing:
@@ -81,33 +89,49 @@ class RobustSecretSharing:
         single value has a strict majority.
         """
 
-        if len(shares) < self.t:
+        votes = self.votes(shares)
+        if not votes:
             return None
+        counts = defaultdict(int)
+        for vote in votes:
+            counts[vote.value] += 1
+        most_common, count = max(counts.items(), key=lambda item: item[1])
+        if list(counts.values()).count(count) > 1:
+            return None
+        return self.unscale(most_common, len(shares))
 
-        p, q = self.Math.PRIME, self.Math.sub_PRIME
-        D, table = _integer_lagrange_table(len(shares), self.t)
-        if gcd(D, q) != 1:
-            raise ValueError("subgroup order too small for these parameters")
+    def votes(self, shares: list[int]) -> list[Vote]:
+        """Interpolate every usable t-subset of the shares. One Vote per subset.
+
+        Vote values are scaled (g^{D·secret}); equal values mean equal secrets.
+        Use unscale() to turn one into g^{secret}.
+        """
+        if len(shares) < self.t:
+            return []
+        p = self.Math.PRIME
+        _, table = _integer_lagrange_table(len(shares), self.t)
 
         # A multiple of p is not a group element, so it cannot be an honest share. It must not
         # take part in any vote: 0^c = 0 would make every subset containing it agree on 0.
         invalid = {x for x, y in enumerate(shares, start=1) if y % p == 0}
 
-        seen = defaultdict(int)
+        votes = []
         for xs, coefficients in table:
             if invalid.intersection(xs):
                 continue
             value = 1  # ∏ y_i^(λ_i·D) mod p = g^(D·secret) for honest shares
             for x, c in zip(xs, coefficients):
                 value = value * pow(shares[x - 1], c, p) % p
-            seen[value] += 1
+            votes.append(Vote(xs, value))
+        return votes
 
-        if not seen:
-            return None
-        most_common, count = max(seen.items(), key=lambda item: item[1])
-        if list(seen.values()).count(count) > 1:
-            return None
-        return pow(most_common, pow(D, -1, q), p)
+    def unscale(self, value: int, share_count: int) -> int:
+        """Turn a vote value g^{D·secret} back into g^{secret}."""
+        D, _ = _integer_lagrange_table(share_count, self.t)
+        q = self.Math.sub_PRIME
+        if gcd(D, q) != 1:
+            raise ValueError("subgroup order too small for these parameters")
+        return pow(value, pow(D, -1, q), self.Math.PRIME)
 
     def lagrange_coefficient(self, x_values: list[int], i: int) -> int:
         """

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fuzzy aPAKE, step by step</title>
+  <meta name="description" content="Interactive walkthrough of a fuzzy asymmetric password-authenticated key exchange, computed live by the project's Python code in your browser.">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <p class="eyebrow">fapake · interactive walkthrough</p>
+    <h1>Log in with a password that's <em>almost</em> right</h1>
+    <p class="lede">
+      Fuzzy aPAKE lets a client and a server agree on a shared key when the password is close
+      enough (here: at most one bit wrong). The server never stores the password, and neither
+      side learns which bits were wrong.
+    </p>
+    <div id="runtime" class="runtime" data-state="loading" role="status">
+      <span class="dot" aria-hidden="true"></span><span id="runtime-text">Starting…</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel controls" aria-label="Inputs">
+      <div class="pw-row">
+        <div class="pw-label">Registered password<small>what the user signed up with</small></div>
+        <div class="bits" id="bits-registered" role="group" aria-label="Registered password bits"></div>
+      </div>
+      <div class="pw-row">
+        <div class="pw-label">Login attempt<small>what the user types now</small></div>
+        <div class="bits" id="bits-attempt" role="group" aria-label="Login attempt bits"></div>
+      </div>
+      <p class="distance" id="distance" aria-live="polite"></p>
+
+      <div class="presets" role="group" aria-label="Presets">
+        <button type="button" data-preset="same">Same password</button>
+        <button type="button" data-preset="one">1 bit off</button>
+        <button type="button" data-preset="two">2 bits off</button>
+        <button type="button" data-preset="random">Randomize</button>
+      </div>
+
+      <div class="options">
+        <fieldset class="segmented" id="scenario">
+          <legend>Scenario</legend>
+          <label><input type="radio" name="scenario" value="honest" checked><span>Honest</span></label>
+          <label><input type="radio" name="scenario" value="corrupt-share"><span>Damaged record</span></label>
+          <label><input type="radio" name="scenario" value="cheating-server"><span>Cheating server</span></label>
+        </fieldset>
+        <label class="target" id="target-wrap" hidden>
+          at bit
+          <select id="target"></select>
+        </label>
+        <fieldset class="segmented" id="group">
+          <legend>Group</legend>
+          <label><input type="radio" name="group" value="demo" checked><span>Demo · 18-bit</span></label>
+          <label><input type="radio" name="group" value="modp2048"><span>Secure · 2048-bit</span></label>
+        </fieldset>
+      </div>
+      <p class="scenario-note" id="scenario-note"></p>
+    </section>
+
+    <div class="error" id="error" role="alert" hidden></div>
+
+    <div id="stages" class="stages" aria-busy="true">
+      <section class="stage" id="stage-register">
+        <header><span class="num">1</span><h2>Registration</h2><span class="who server">server</span></header>
+        <p class="explain">
+          The server picks a random secret <var>k</var> and splits it into 8 Shamir shares; any
+          6 of them rebuild <var>k</var>. For every password bit it stores a pair of slots: the
+          <span class="tag real">real share</span> goes in the slot matching the bit, a random
+          <span class="tag decoy">decoy</span> in the other. Values are stored as powers
+          <var>g</var><sup>x</sup>, so the file holds no password and no usable secret.
+        </p>
+        <div class="viz" id="viz-register"></div>
+      </section>
+
+      <section class="stage" id="stage-server">
+        <header><span class="num">2</span><h2>Fresh mask for this login</h2><span class="who server">server</span></header>
+        <p class="explain">
+          For each login the server draws a new secret <var>r</var>, splits it the same way and
+          multiplies <var>g</var><sup>r<sub>i</sub></sup> into <em>both</em> slots of pair
+          <var>i</var>. The shared secret becomes <var>K</var> = <var>g</var><sup>k+r</sup>, different every time. The
+          server encrypts the masked pairs and <var>g</var><sup>pw</sup> under <var>K</var> and sends the ciphertext.
+        </p>
+        <div class="viz" id="viz-server"></div>
+      </section>
+
+      <section class="stage" id="stage-ot">
+        <header><span class="num">3</span><h2>Oblivious transfer</h2><span class="who both">client ⇄ server</span>
+          <button type="button" class="replay" id="replay" title="Replay the animation">Replay</button></header>
+        <p class="explain">
+          For each bit, the client fetches one slot using its <em>own</em> password bit. Oblivious
+          transfer guarantees the server can't tell which slot was taken (it only sees a random-looking
+          <var>v</var>), and the client learns nothing about the other slot. A correct bit gets the
+          real share; a wrong bit silently gets the decoy.
+        </p>
+        <div class="viz" id="viz-ot"></div>
+      </section>
+
+      <section class="stage" id="stage-reconstruct">
+        <header><span class="num">4</span><h2>Robust reconstruction</h2><span class="who client">client</span></header>
+        <p class="explain">
+          The client doesn't know which shares are decoys, so it tries every set of 6 out of
+          8 (28 sets) and interpolates each one. Sets made only of real shares all agree on
+          <var>K</var>. With one wrong bit, 7 sets still agree. That majority is the error correction.
+        </p>
+        <div class="viz" id="viz-reconstruct"></div>
+      </section>
+
+      <section class="stage" id="stage-result">
+        <header><span class="num">5</span><h2>Checks and session key</h2><span class="who client">client</span></header>
+        <p class="explain">
+          The client decrypts the server's message with its <var>K</var>, checks that the registered
+          password is within distance 1 of its own, and that the shares it received match the
+          encrypted ones (catching a cheating server). On any failure it outputs a random key, so a
+          wrong password looks like a right one until the key is used.
+        </p>
+        <div class="viz" id="viz-result"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>
+      Every value on this page is computed by the project's own Python package, running in your
+      browser via <a href="https://pyodide.org">Pyodide</a>. <span id="timing"></span>
+    </p>
+    <p>Demo group values are tiny on purpose so you can read them. They offer no security.</p>
+  </footer>
+</body>
+</html>

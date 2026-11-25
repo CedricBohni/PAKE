@@ -136,27 +136,43 @@ class UserRecord:
                    data.get("group", DEMO_GROUP.name))  # records from before groups existed
 
 
-def register(password: Password, params: Params = DEFAULT_PARAMS) -> UserRecord:
-    """Create the server-side record for a password."""
+@dataclass(frozen=True)
+class RegistrationSecrets:
+    """Values the server uses during registration and then forgets. Exposed for the visualizer."""
+    k: int                       # the secret, in Z_q
+    k_shares: list[int]          # Shamir shares of k, in Z_q
+    decoy_exponents: list[int]   # r_i with decoy = g^{r_i}
+
+
+def register_with_details(password: Password,
+                          params: Params = DEFAULT_PARAMS) -> tuple[UserRecord, RegistrationSecrets]:
+    """Like register(), but also returns the intermediate secrets."""
     validate_password(password, params.n)
     math = ModularArithmetic(params.group)
     rss = RobustSecretSharing(params.n, params.t, params.e, math)
 
     k = math.generate_random_int(sub=True)
     k_shares = rss.generate_shares(k)
+    decoy_exponents = [math.generate_random_int(sub=True) for _ in password]
 
     shares: list[tuple[int, int]] = []
-    for bit, k_share in zip(password, k_shares):
+    for bit, k_share, decoy_exponent in zip(password, k_shares, decoy_exponents):
         real = math.modular_generator_exponentiation(k_share)
-        decoy = math.modular_generator_exponentiation(math.generate_random_int(sub=True))
+        decoy = math.modular_generator_exponentiation(decoy_exponent)
         shares.append((real, decoy) if bit == 0 else (decoy, real))
 
-    return UserRecord(
+    record = UserRecord(
         shares=shares,
         pw=math.modular_generator_exponentiation(password_to_int(password)),
         k=math.modular_generator_exponentiation(k),
         group=params.group.name,
     )
+    return record, RegistrationSecrets(k, k_shares, decoy_exponents)
+
+
+def register(password: Password, params: Params = DEFAULT_PARAMS) -> UserRecord:
+    """Create the server-side record for a password."""
+    return register_with_details(password, params)[0]
 
 
 # --------------------------------------------------------------------------- authentication
@@ -186,6 +202,7 @@ class ServerSession:
 
         r = self.math.generate_random_int(sub=True)
         r_shares = rss.generate_shares(r)
+        self.r, self.r_shares = r, r_shares  # kept for inspection (visualizer, tests)
         self.randomized_key = self.math.modular_multiplication(
             record.k, self.math.modular_generator_exponentiation(r))
 

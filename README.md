@@ -9,6 +9,26 @@ This repository implements the **fuzzy aPAKE** protocol, as described in the pap
 - **Oblivious Transfer Protocol**: Ensures secure exchange of password shares between the client and server.
 - **Session Key Generation**: Generates a secure session key upon successful authentication.
 
+## Interactive visualizer
+
+`web/` contains a step-by-step walkthrough of one login: registration, the per-login mask, the eight oblivious transfers, the 28-subset majority vote and the final checks. Flip password bits, simulate a damaged record or a cheating server, and switch between the readable demo group and the real 2048-bit group. Every number shown is computed by this package's Python code, running in the browser via [Pyodide](https://pyodide.org).
+
+Run it locally:
+
+```bash
+uv run python web/serve.py
+```
+
+Then open <http://localhost:8000>. The first load downloads the Python runtime (about 10 seconds); after that each change recomputes in a fraction of a second in the demo group.
+
+The `visualizer` workflow publishes it to GitHub Pages on every push to `master`. To turn that on, set the repository's **Settings → Pages → Source** to **GitHub Actions**. The page is then served at `https://<user>.github.io/PAKE/`.
+
+The same trace is available from the command line as JSON:
+
+```bash
+uv run python -m fapake.trace 10101010 10101011
+```
+
 ## How to run
 
 ### 1. Install uv
@@ -123,6 +143,8 @@ The tests cover the group parameters, secret sharing, oblivious transfer, messag
 | `src/fapake/modmath.py` | Modular arithmetic and the two groups (RFC 3526 2048-bit, toy demo group) |
 | `src/fapake/wire.py` | Length-prefixed JSON messages over TCP |
 | `src/fapake/server.py`, `client.py` | TCP server and interactive client |
+| `src/fapake/trace.py` | Records every intermediate value of one run (feeds the visualizer) |
+| `web/` | The visualizer: static page, Pyodide worker, local dev server |
 | `development/` | Earlier experiments (Berlekamp-Welch decoding, brute force) |
 
 ## Security note
