@@ -37,7 +37,7 @@ cd PAKE
 uv sync
 ```
 
-`uv sync` creates a `.venv` folder inside the project and installs `cryptography` and `sympy` there. Nothing is installed globally.
+`uv sync` creates a `.venv` folder inside the project and installs `cryptography` there (plus `pytest` and `sympy` for the tests). Nothing is installed globally.
 
 ### 3. Start the server
 
@@ -45,7 +45,7 @@ uv sync
 uv run fapake-server
 ```
 
-It prints `Server listening on 127.0.0.1:65432` and keeps running. Stop it with `Ctrl+C`.
+It first generates a fresh RSA key for the oblivious transfer (about a second), then prints `Server listening on 127.0.0.1:65432 (group modp2048, OT key 3072 bits)` and keeps running. Stop it with `Ctrl+C`.
 
 ### 4. Start the client
 
@@ -62,7 +62,18 @@ uv run fapake-client
 3. Authenticate again with one bit changed, such as `10101011`. The keys still match: this is the fuzzy part.
 4. Authenticate with two bits changed, such as `10101111`. The client prints a reason and a different key, so authentication failed.
 
-See the [example session](#example-registration) below.
+See the [example session](#example-registration) below. An authentication takes under a second with the default 2048-bit group.
+
+### Demo mode
+
+To see the numbers the protocol works with, start **both** sides with `--demo`:
+
+```bash
+uv run fapake-server --demo
+uv run fapake-client --demo
+```
+
+This switches to an 18-bit toy group (and a 1024-bit OT key). Everything is fast and the values in `userFiles/` are short enough to read, but it offers no security. If only one side uses `--demo`, the client reports the mismatch.
 
 ### Options
 
@@ -70,7 +81,10 @@ See the [example session](#example-registration) below.
 | --- | --- | --- | --- |
 | both | `--host` | `127.0.0.1` | Address to listen on / connect to |
 | both | `--port` | `65432` | TCP port (use the same on both sides) |
+| both | `--demo` | off | Use the insecure toy group (must match on both sides) |
 | `fapake-server` | `--store` | `userFiles` | Folder where user records are saved |
+
+Users registered in one mode can't log in while the server runs in the other mode. Each record stores which group it was made with.
 
 If the port is already in use, pick another one on both sides, for example `uv run fapake-server --port 65500` and `uv run fapake-client --port 65500`.
 
@@ -96,7 +110,7 @@ fapake-server        # and in a second terminal: fapake-client
 uv run pytest
 ```
 
-The tests cover secret sharing, oblivious transfer, the full protocol (exact, 1-bit-off and 2-bit-off passwords, corrupted records, an inconsistent server), and a real TCP round trip.
+The tests cover the group parameters, secret sharing, oblivious transfer, message framing, the full protocol (exact, 1-bit-off and 2-bit-off passwords, corrupted records, an inconsistent server, mismatched groups), and real TCP sessions, including several clients at once. Most tests use the demo group. The ones marked `slow` use the real 2048-bit group; skip them with `uv run pytest -m "not slow"`.
 
 ## Project layout
 
@@ -106,13 +120,26 @@ The tests cover secret sharing, oblivious transfer, the full protocol (exact, 1-
 | `src/fapake/rss.py` | Robust secret sharing in the exponent |
 | `src/fapake/ot.py` | RSA-based 1-out-of-2 oblivious transfer |
 | `src/fapake/ic.py` | AES-GCM encryption keyed by a group element |
-| `src/fapake/modmath.py` | Modular arithmetic and group parameters |
+| `src/fapake/modmath.py` | Modular arithmetic and the two groups (RFC 3526 2048-bit, toy demo group) |
+| `src/fapake/wire.py` | Length-prefixed JSON messages over TCP |
 | `src/fapake/server.py`, `client.py` | TCP server and interactive client |
 | `development/` | Earlier experiments (Berlekamp-Welch decoding, brute force) |
 
 ## Security note
 
-This is a research demo. The group parameters are tiny, the oblivious-transfer RSA key is fixed and public, and randomness comes from Python's `random` module. Do not use it to protect anything.
+This is a research implementation, not audited software. What it does:
+
+- The default group is the 2048-bit MODP group from RFC 3526.
+- The server generates a new RSA key for oblivious transfer each time it starts (3072-bit, so it is larger than the group). The private key never leaves memory.
+- All secrets and protocol randomness come from Python's `secrets` module.
+- Session keys are 256-bit, derived with SHA-256 from the shared group element.
+- Each connection has its own authentication session, so concurrent clients can't interfere with each other.
+
+What it doesn't do:
+
+- Passwords are 8 bits, so there are only 256 of them. Anyone holding a server record, or seeing a successful login, can try them all. Longer passwords need larger `n` in `Params`.
+- Registration sends the password to the server in the clear, and the connection itself is not encrypted. Use it only on a trusted network, or put it behind TLS.
+- Python's big-integer arithmetic is not constant-time.
 
 ## Example Registration
 
@@ -126,7 +153,7 @@ Enter your choice: 1
 Enter username: alice
 Enter 8-bit password: 10101010
 Server registration response: Registration successful
-Time taken for registration: 0.123456 seconds
+Time taken for registration: 0.391179 seconds
 ```
 
 ## Example Authentication
@@ -140,6 +167,6 @@ Enter your choice: 2
 === User Authentication ===
 Enter username: alice
 Enter 8-bit password: 10101011
-SESSION KEY: 123456789abcdef
-Time taken for authentication: 0.123456 seconds
+SESSION KEY: 81b909a840c83c5c844f1af6babdf8a875392e957678fbf5ea078c8e1a755fa0
+Time taken for authentication: 0.710440 seconds
 ```

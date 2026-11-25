@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "cryptography>=50.0.2",
-    "sympy>=1.14.0",
 ]
 
 [project.scripts]
@@ -16,6 +15,7 @@ fapake-client = "fapake.client:main"
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
+    "sympy>=1.14.0",
 ]
 
 [build-system]
@@ -24,3 +24,4 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["slow: uses the real 2048-bit group (deselect with -m 'not slow')"]

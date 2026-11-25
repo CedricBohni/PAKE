@@ -184,22 +184,22 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
-    { name = "sympy" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "sympy" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "cryptography", specifier = ">=50.0.2" },
-    { name = "sympy", specifier = ">=1.14.0" },
-]
+requires-dist = [{ name = "cryptography", specifier = ">=50.0.2" }]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.2.0" }]
+dev = [
+    { name = "pytest", specifier = ">=9.2.0" },
+    { name = "sympy", specifier = ">=1.14.0" },
+]
 
 [[package]]
 name = "iniconfig"

@@ -1,4 +1,4 @@
-from fapake.modmath import ModularArithmetic
+from fapake.modmath import DEMO_GROUP, ModularArithmetic
 from sympy import Matrix, symbols, Poly, div
 from sympy.abc import x as x_sympy
 
@@ -8,7 +8,7 @@ class RobustSecretSharing:
         self.n = n
         self.t = t
         self.e = e
-        self.Math = ModularArithmetic()
+        self.Math = ModularArithmetic(DEMO_GROUP)
 
     def generate_shares(self, secret: int) -> list[int]:
 

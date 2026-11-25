@@ -6,9 +6,35 @@ shares are tolerated by trying every subset of size ``t`` and taking a strict ma
 """
 
 from collections import defaultdict
+from fractions import Fraction
+from functools import cache
 from itertools import combinations
+from math import gcd, lcm
 
 from fapake.modmath import ModularArithmetic
+
+
+def _lagrange_at_zero(xs: tuple[int, ...], i: int) -> Fraction:
+    result = Fraction(1)
+    for j, xj in enumerate(xs):
+        if j != i:
+            result *= Fraction(xj, xj - xs[i])
+    return result
+
+
+@cache
+def _integer_lagrange_table(m: int, t: int) -> tuple[int, list[tuple[tuple[int, ...], list[int]]]]:
+    """Lagrange coefficients (at 0) for every t-subset of x = 1..m, scaled to integers.
+
+    The coefficients are small fractions. Multiplying them all by one common
+    denominator D turns them into small integers, so interpolating in the exponent
+    costs t cheap exponentiations per subset instead of t full-size ones. The result
+    is g^{D*secret}; one final exponentiation by D^{-1} mod q removes D.
+    """
+    subsets = list(combinations(range(1, m + 1), t))
+    fractions = [[_lagrange_at_zero(xs, i) for i in range(t)] for xs in subsets]
+    D = lcm(*(f.denominator for row in fractions for f in row))
+    return D, [(xs, [int(f * D) for f in row]) for xs, row in zip(subsets, fractions)]
 
 
 class RobustSecretSharing:
@@ -58,22 +84,30 @@ class RobustSecretSharing:
         if len(shares) < self.t:
             return None
 
+        p, q = self.Math.PRIME, self.Math.sub_PRIME
+        D, table = _integer_lagrange_table(len(shares), self.t)
+        if gcd(D, q) != 1:
+            raise ValueError("subgroup order too small for these parameters")
+
+        # A multiple of p is not a group element, so it cannot be an honest share. It must not
+        # take part in any vote: 0^c = 0 would make every subset containing it agree on 0.
+        invalid = {x for x, y in enumerate(shares, start=1) if y % p == 0}
+
         seen = defaultdict(int)
-        points = list(zip(range(1, len(shares) + 1), shares))
+        for xs, coefficients in table:
+            if invalid.intersection(xs):
+                continue
+            value = 1  # ∏ y_i^(λ_i·D) mod p = g^(D·secret) for honest shares
+            for x, c in zip(xs, coefficients):
+                value = value * pow(shares[x - 1], c, p) % p
+            seen[value] += 1
 
-        for subset in combinations(points, self.t):
-            x_values, y_values = zip(*subset)
-            secret = 1
-            for i in range(self.t):
-                lagrange_coeff = self.lagrange_coefficient(list(x_values), i)  # in mod q
-                g_term = self.Math.modular_exponentiation(y_values[i], lagrange_coeff)  # y_i^λ_i mod p
-                secret = self.Math.modular_multiplication(secret, g_term)  # ∏ y_i^λ_i mod p
-            seen[secret] += 1
-
+        if not seen:
+            return None
         most_common, count = max(seen.items(), key=lambda item: item[1])
         if list(seen.values()).count(count) > 1:
             return None
-        return most_common
+        return pow(most_common, pow(D, -1, q), p)
 
     def lagrange_coefficient(self, x_values: list[int], i: int) -> int:
         """

@@ -1,4 +1,4 @@
-from fapake.modmath import ModularArithmetic
+from fapake.modmath import DEMO_GROUP, ModularArithmetic
 from collections import defaultdict
 from itertools import combinations
 
@@ -29,7 +29,7 @@ class RobustSecretSharing:
         self.n = n
         self.t = t
         self.e = e
-        self.Math = ModularArithmetic()
+        self.Math = ModularArithmetic(DEMO_GROUP)
 
     def generate_shares(self, secret: int) -> list[int]:
 
