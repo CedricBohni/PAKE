@@ -1,4 +1,4 @@
-from utils.Math import ModularArithmetic
+from fapake.modmath import ModularArithmetic
 from sympy import Matrix, symbols, Poly, div
 from sympy.abc import x as x_sympy
 

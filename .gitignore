@@ -1,0 +1,9 @@
+.idea/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+
+# runtime data written by the server
+userFiles/

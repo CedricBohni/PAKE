@@ -1,0 +1,26 @@
+[project]
+name = "fapake"
+version = "0.1.0"
+description = "Fuzzy asymmetric password-authenticated key exchange (fuzzy aPAKE) with robust secret sharing and oblivious transfer"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cryptography>=50.0.2",
+    "sympy>=1.14.0",
+]
+
+[project.scripts]
+fapake-server = "fapake.server:main"
+fapake-client = "fapake.client:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.10,<0.14"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
