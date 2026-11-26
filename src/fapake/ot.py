@@ -63,8 +63,7 @@ def generate_key(bits: int = 3072) -> RSAKeyPair:
     """Generate a fresh RSA key pair for oblivious transfer."""
     private = rsa.generate_private_key(public_exponent=65537, key_size=bits)
     numbers = private.private_numbers()
-    return RSAKeyPair(numbers.public_numbers.n, numbers.public_numbers.e, numbers.d,
-                      numbers.p, numbers.q)
+    return RSAKeyPair(numbers.public_numbers.n, numbers.public_numbers.e, numbers.d, numbers.p, numbers.q)
 
 
 def key_bits_for(modulus: int) -> int:
@@ -79,6 +78,7 @@ def _uniform_below(N: int) -> Rand:
 @dataclass(frozen=True)
 class OTOffer:
     """The sender's random values for the next round."""
+
     x0: int
     x1: int
 
@@ -86,6 +86,7 @@ class OTOffer:
 @dataclass(frozen=True)
 class OTReply:
     """The sender's masked messages plus the offer for the following round."""
+
     c0: int
     c1: int
     next_offer: OTOffer

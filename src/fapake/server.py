@@ -25,8 +25,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from fapake.ot import RSAKeyPair
-from fapake.protocol import (DEFAULT_PARAMS, DEMO_PARAMS, Params, ProtocolError, ServerSession,
-                             UserRecord, register, validate_password)
+from fapake.protocol import (
+    DEFAULT_PARAMS,
+    DEMO_PARAMS,
+    Params,
+    ProtocolError,
+    ServerSession,
+    UserRecord,
+    register,
+    validate_password,
+)
 from fapake.wire import WireError, recv_message, send_message
 
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -61,6 +69,7 @@ class UserStore:
 @dataclass
 class ConnectionState:
     """Per-connection state: the authentication in progress, if any."""
+
     session: ServerSession | None = None
 
 
@@ -70,12 +79,18 @@ def _print_session_key(username: str, key: str) -> None:
 
 class Server:
     """
-       A server class to handle user registration and authentication
+    A server class to handle user registration and authentication
     """
 
-    def __init__(self, host: str = '127.0.0.1', port: int = 65432, params: Params = DEFAULT_PARAMS,
-                 store: UserStore | None = None, ot_key: RSAKeyPair | None = None,
-                 on_session_key: Callable[[str, str], None] = _print_session_key) -> None:
+    def __init__(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 65432,
+        params: Params = DEFAULT_PARAMS,
+        store: UserStore | None = None,
+        ot_key: RSAKeyPair | None = None,
+        on_session_key: Callable[[str, str], None] = _print_session_key,
+    ) -> None:
         self.host = host
         self.port = port
         self.params = params
@@ -94,8 +109,10 @@ class Server:
             s.listen()
             self.address = s.getsockname()
             self.ready.set()
-            print(f"Server listening on {self.address[0]}:{self.address[1]} "
-                  f"(group {self.params.group.name}, OT key {self.ot_key.N.bit_length()} bits)")
+            print(
+                f"Server listening on {self.address[0]}:{self.address[1]} "
+                f"(group {self.params.group.name}, OT key {self.ot_key.N.bit_length()} bits)"
+            )
             while True:
                 conn, addr = s.accept()
                 threading.Thread(target=self.serve_connection, args=(conn, addr), daemon=True).start()
@@ -152,9 +169,14 @@ class Server:
         state.session = ServerSession(record, self.ot_key, self.params)
         challenge = state.session.challenge()
         self.on_session_key(username, state.session.session_key)
-        return {"group": challenge.group, "cipher": challenge.cipher,
-                "x0": challenge.offer.x0, "x1": challenge.offer.x1,
-                "ot_n": challenge.ot_key.N, "ot_e": challenge.ot_key.e}
+        return {
+            "group": challenge.group,
+            "cipher": challenge.cipher,
+            "x0": challenge.offer.x0,
+            "x1": challenge.offer.x1,
+            "ot_n": challenge.ot_key.N,
+            "ot_e": challenge.ot_key.e,
+        }
 
     def handle_ot(self, message: dict, state: ConnectionState) -> dict:
         if state.session is None:
@@ -168,8 +190,7 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=65432)
     parser.add_argument("--store", default="userFiles", help="directory for user records")
-    parser.add_argument("--demo", action="store_true",
-                        help="use the tiny insecure demo group (fast, readable numbers)")
+    parser.add_argument("--demo", action="store_true", help="use the tiny insecure demo group (fast, readable numbers)")
     args = parser.parse_args()
     params = DEMO_PARAMS if args.demo else DEFAULT_PARAMS
     print(f"Generating {params.ot_key_bits}-bit RSA key for oblivious transfer...")

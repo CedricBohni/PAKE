@@ -13,14 +13,14 @@ def _key_bytes(key: int) -> bytes:
 
 def encrypt(key: int, data: str) -> str:
     """
-        Encrypts the given data using AES-GCM with a key derived from the provided integer.
+    Encrypts the given data using AES-GCM with a key derived from the provided integer.
 
-        Args:
-            key (int): The integer key used for encryption.
-            data (str): The plaintext data to be encrypted.
+    Args:
+        key (int): The integer key used for encryption.
+        data (str): The plaintext data to be encrypted.
 
-        Returns:
-            str: A JSON string containing the encrypted data and the nonce used for encryption.
+    Returns:
+        str: A JSON string containing the encrypted data and the nonce used for encryption.
     """
     nonce = os.urandom(12)
     ciphertext = AESGCM(_key_bytes(key)).encrypt(nonce, data.encode(), None)
@@ -29,17 +29,17 @@ def encrypt(key: int, data: str) -> str:
 
 def decrypt(key: int, cipher: dict[str, str]):
     """
-        Decrypts the given ciphertext using AES-GCM with a key derived from the provided integer.
+    Decrypts the given ciphertext using AES-GCM with a key derived from the provided integer.
 
-        Args:
-            key (int): The integer key used for decryption.
-            cipher (dict[str, str]): A dictionary containing the nonce and ciphertext in hexadecimal format.
+    Args:
+        key (int): The integer key used for decryption.
+        cipher (dict[str, str]): A dictionary containing the nonce and ciphertext in hexadecimal format.
 
-        Returns:
-            The decrypted JSON data.
+    Returns:
+        The decrypted JSON data.
 
-        Raises:
-            cryptography.exceptions.InvalidTag: if the key is wrong or the ciphertext was modified.
+    Raises:
+        cryptography.exceptions.InvalidTag: if the key is wrong or the ciphertext was modified.
     """
     nonce = bytes.fromhex(cipher["nonce"])
     ciphertext = bytes.fromhex(cipher["ciphertext"])

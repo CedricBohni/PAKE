@@ -37,14 +37,26 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(f'<body style="margin:0"><iframe src="/__snapshot/{name}" '
-                             f'style="border:0;width:380px;height:100vh"></iframe>'.encode())
+            self.wfile.write(
+                f'<body style="margin:0"><iframe src="/__snapshot/{name}" '
+                f'style="border:0;width:380px;height:100vh"></iframe>'.encode()
+            )
             return
         if self.path.startswith("/__snapshot/"):
-            body = SNAPSHOTS.get(self.path.rsplit("/", 1)[-1])
+            # /__snapshot/<name>?only=stage-ot,stage-reconstruct keeps just the controls and those stages.
+            path, _, query = self.path.partition("?")
+            body = SNAPSHOTS.get(path.rsplit("/", 1)[-1])
             if body is None:
                 self.send_error(404)
                 return
+            only = [s for s in query.removeprefix("only=").split(",") if s.isidentifier() or "-" in s]
+            if query.startswith("only=") and only:
+                keep = "".join(f":not(#{s})" for s in only)
+                style = (
+                    f"<style>.hero,.footer,.stage{keep}{{display:none!important}}"
+                    "main{padding-top:24px;padding-bottom:24px}.controls{position:static}</style>"
+                )
+                body = body.replace(b"</head>", style.encode() + b"</head>", 1)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()

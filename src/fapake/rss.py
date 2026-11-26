@@ -41,13 +41,14 @@ def _integer_lagrange_table(m: int, t: int) -> tuple[int, list[tuple[tuple[int, 
 @dataclass(frozen=True)
 class Vote:
     """The value one t-subset of shares interpolates to (scaled by D, see votes())."""
+
     xs: tuple[int, ...]
     value: int
 
 
 class RobustSecretSharing:
     """
-        A class implementing Robust Secret Sharing (RSS) with error correction in the context of exponentiation.
+    A class implementing Robust Secret Sharing (RSS) with error correction in the context of exponentiation.
     """
 
     def __init__(self, n: int, t: int, e: int, math: ModularArithmetic | None = None) -> None:

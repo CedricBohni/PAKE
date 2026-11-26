@@ -84,4 +84,5 @@ def test_key_bits_for(modulus_bits, expected):
 
 def test_fresh_keys_differ(demo_key):
     from fapake.protocol import DEMO_PARAMS
+
     assert DEMO_PARAMS.generate_ot_key().N != demo_key.N

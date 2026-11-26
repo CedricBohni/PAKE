@@ -19,6 +19,7 @@ def flip(bits, *positions):
 def trace(demo_key):
     def run(attempt, scenario="honest", target=0, registered=REG):
         return run_trace(registered, attempt, DEMO_PARAMS, scenario, target, demo_key)
+
     return run
 
 
@@ -51,6 +52,7 @@ def test_two_bits_off(trace):
 def test_stored_layout_follows_bits(trace):
     t = trace(REG)
     from fapake.modmath import DEMO_GROUP
+
     for bit, pair, share in zip(REG, t["registration"]["stored"], t["registration"]["k_shares"]):
         assert pair[bit] == str(pow(DEMO_GROUP.g, int(share), DEMO_GROUP.p))
 
@@ -58,11 +60,12 @@ def test_stored_layout_follows_bits(trace):
 def test_rerandomization_is_visible(trace):
     t = trace(REG)
     p = int(t["params"]["group"]["p"])
-    for stored, mask, randomized in zip(t["registration"]["stored"], t["server"]["masks"],
-                                        t["server"]["randomized"]):
+    for stored, mask, randomized in zip(t["registration"]["stored"], t["server"]["masks"], t["server"]["randomized"]):
         assert [int(s) * int(mask) % p for s in stored] == [int(x) for x in randomized]
-    assert int(t["server"]["K"]) == int(t["registration"]["g_k"]) * pow(
-        int(t["params"]["group"]["g"]), int(t["server"]["r"]), p) % p
+    assert (
+        int(t["server"]["K"])
+        == int(t["registration"]["g_k"]) * pow(int(t["params"]["group"]["g"]), int(t["server"]["r"]), p) % p
+    )
 
 
 def test_corrupted_share_is_corrected(trace):
@@ -97,10 +100,13 @@ def test_json_entry_point(demo_key):
     assert out["result"]["match"]
 
 
-@pytest.mark.parametrize("bad", [
-    {"scenario": "nope"},
-    {"target": 8},
-])
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"scenario": "nope"},
+        {"target": 8},
+    ],
+)
 def test_rejects_bad_options(trace, bad):
     with pytest.raises(ValueError):
         trace(REG, **bad)

@@ -31,7 +31,7 @@ def test_reconstruct_threshold_shares(rss):
 
 def test_too_few_shares(rss):
     _, shares = share(rss)
-    assert rss.reconstruct_secret(shares[:T - 1]) is None
+    assert rss.reconstruct_secret(shares[: T - 1]) is None
 
 
 @pytest.mark.parametrize("bad_index", range(N))
@@ -66,7 +66,8 @@ def test_fast_reconstruction_matches_textbook_lagrange(rss):
     textbook = 1
     for i in range(T):
         textbook = math.modular_multiplication(
-            textbook, math.modular_exponentiation(shares[i], rss.lagrange_coefficient(xs, i)))
+            textbook, math.modular_exponentiation(shares[i], rss.lagrange_coefficient(xs, i))
+        )
     assert textbook == secret == rss.reconstruct_secret(shares[:T])
 
 

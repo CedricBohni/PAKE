@@ -8,8 +8,7 @@ import pytest
 
 from fapake.client import Client
 from fapake.ot import OTOffer, OTReply, RSAPublicKey
-from fapake.protocol import (DEFAULT_PARAMS, DEMO_PARAMS, AuthChallenge, ClientSession,
-                             ProtocolError)
+from fapake.protocol import DEFAULT_PARAMS, DEMO_PARAMS, AuthChallenge, ClientSession, ProtocolError
 from fapake.server import ConnectionState, Server, UserStore
 from fapake.wire import recv_message, send_message
 
@@ -41,8 +40,7 @@ def keylog():
 
 @pytest.fixture
 def server(tmp_path, demo_key, keylog):
-    return Server(port=0, params=DEMO_PARAMS, store=UserStore(tmp_path), ot_key=demo_key,
-                  on_session_key=keylog)
+    return Server(port=0, params=DEMO_PARAMS, store=UserStore(tmp_path), ot_key=demo_key, on_session_key=keylog)
 
 
 @pytest.fixture
@@ -100,9 +98,16 @@ def test_interleaved_sessions_on_two_connections(server, client, keylog):
         send_message(sock, {"action": "authenticate", "username": user})
         data = recv_message(sock)
         session = ClientSession(PASSWORD, DEMO_PARAMS)
-        offers.append(session.begin(AuthChallenge(data["group"], data["cipher"],
-                                                  OTOffer(data["x0"], data["x1"]),
-                                                  RSAPublicKey(data["ot_n"], data["ot_e"]))))
+        offers.append(
+            session.begin(
+                AuthChallenge(
+                    data["group"],
+                    data["cipher"],
+                    OTOffer(data["x0"], data["x1"]),
+                    RSAPublicKey(data["ot_n"], data["ot_e"]),
+                )
+            )
+        )
         conns.append(sock)
         sessions.append(session)
 
@@ -141,8 +146,7 @@ def test_garbage_on_the_wire(server, client):
 
 
 def test_group_mismatch_is_reported(tmp_path, demo_key, keylog):
-    server = Server(port=0, params=DEMO_PARAMS, store=UserStore(tmp_path), ot_key=demo_key,
-                    on_session_key=keylog)
+    server = Server(port=0, params=DEMO_PARAMS, store=UserStore(tmp_path), ot_key=demo_key, on_session_key=keylog)
     host, port = start_server(server)
     Client(host, port, DEMO_PARAMS).register("gina", PASSWORD)
     with pytest.raises(ProtocolError, match="server uses group 'demo'"):
@@ -162,6 +166,7 @@ def test_secure_group_over_tcp(tmp_path, secure_key, keylog):
 
 # ----------------------------------------------------------------- request handling without sockets
 
+
 def request(server, message):
     return server.handle_request(message, ConnectionState())
 
@@ -172,14 +177,17 @@ def test_stored_file_has_no_password(server, tmp_path):
     assert set(stored) == {"group", "shares", "pw", "k"}
 
 
-@pytest.mark.parametrize("message, error", [
-    ({"action": "dance"}, "Invalid action or data"),
-    ({"action": "register", "username": "x", "password": [1, 0]}, "Invalid registration data"),
-    ({"action": "register", "username": "../evil", "password": PASSWORD}, "invalid username"),
-    ({"action": "authenticate", "username": "ghost"}, "User not found"),
-    ({"action": "authenticate"}, "invalid username"),
-    ({"action": "ot", "i": 0, "v": 5}, "No authentication in progress"),
-    ([1, 2, 3], "Invalid action or data"),
-])
+@pytest.mark.parametrize(
+    "message, error",
+    [
+        ({"action": "dance"}, "Invalid action or data"),
+        ({"action": "register", "username": "x", "password": [1, 0]}, "Invalid registration data"),
+        ({"action": "register", "username": "../evil", "password": PASSWORD}, "invalid username"),
+        ({"action": "authenticate", "username": "ghost"}, "User not found"),
+        ({"action": "authenticate"}, "invalid username"),
+        ({"action": "ot", "i": 0, "v": 5}, "No authentication in progress"),
+        ([1, 2, 3], "Invalid action or data"),
+    ],
+)
 def test_bad_requests(server, message, error):
     assert request(server, message) == {"ok": False, "error": error}

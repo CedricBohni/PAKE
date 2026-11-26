@@ -17,8 +17,15 @@ from typing import Literal
 
 from fapake.modmath import GROUPS, ModularArithmetic
 from fapake.ot import RSAKeyPair
-from fapake.protocol import (DEMO_PARAMS, ClientSession, Params, ServerSession,
-                             hamming_distance, register_with_details, validate_password)
+from fapake.protocol import (
+    DEMO_PARAMS,
+    ClientSession,
+    Params,
+    ServerSession,
+    hamming_distance,
+    register_with_details,
+    validate_password,
+)
 from fapake.rss import RobustSecretSharing
 
 Scenario = Literal["honest", "corrupt-share", "cheating-server"]
@@ -39,9 +46,14 @@ def _s(value: int) -> str:
     return str(value)
 
 
-def run_trace(registered: list[int], attempt: list[int], params: Params = DEMO_PARAMS,
-              scenario: Scenario = "honest", target: int = 0,
-              ot_key: RSAKeyPair | None = None) -> dict:
+def run_trace(
+    registered: list[int],
+    attempt: list[int],
+    params: Params = DEMO_PARAMS,
+    scenario: Scenario = "honest",
+    target: int = 0,
+    ot_key: RSAKeyPair | None = None,
+) -> dict:
     """Register `registered`, log in with `attempt`, and return the full trace as a dict.
 
     scenario:
@@ -106,9 +118,19 @@ def run_trace(registered: list[int], attempt: list[int], params: Params = DEMO_P
             kind = "altered"
         else:
             kind = "real"
-        rounds.append({"i": index, "bit": attempt[index], "x0": _s(x0), "x1": _s(x1), "v": _s(v),
-                       "c0": _s(reply.c0), "c1": _s(reply.c1),
-                       "received": _s(client.received[-1]), "kind": kind})
+        rounds.append(
+            {
+                "i": index,
+                "bit": attempt[index],
+                "x0": _s(x0),
+                "x1": _s(x1),
+                "v": _s(v),
+                "c0": _s(reply.c0),
+                "c1": _s(reply.c1),
+                "received": _s(client.received[-1]),
+                "kind": kind,
+            }
+        )
     lap("ot")
 
     # ------------------------------------------------------------------ reconstruction + checks
@@ -130,10 +152,19 @@ def run_trace(registered: list[int], attempt: list[int], params: Params = DEMO_P
     lap("votes")
 
     return {
-        "params": {"n": params.n, "t": params.t, "e": params.e,
-                   "group": {"name": params.group.name, "p": _s(params.group.p), "q": _s(params.group.q),
-                             "g": _s(params.group.g), "bits": params.group.p.bit_length()},
-                   "ot_key_bits": key.N.bit_length()},
+        "params": {
+            "n": params.n,
+            "t": params.t,
+            "e": params.e,
+            "group": {
+                "name": params.group.name,
+                "p": _s(params.group.p),
+                "q": _s(params.group.q),
+                "g": _s(params.group.g),
+                "bits": params.group.p.bit_length(),
+            },
+            "ot_key_bits": key.N.bit_length(),
+        },
         "registered": registered,
         "attempt": attempt,
         "distance": hamming_distance(registered, attempt),
@@ -177,8 +208,15 @@ def run_trace_json(options_json: str) -> str:
     """JSON in, JSON out. Entry point for the browser (Pyodide)."""
     options = json.loads(options_json)
     params = Params(group=GROUPS[options.get("group", "demo")])
-    return json.dumps(run_trace(options["registered"], options["attempt"], params,
-                                options.get("scenario", "honest"), options.get("target", 0)))
+    return json.dumps(
+        run_trace(
+            options["registered"],
+            options["attempt"],
+            params,
+            options.get("scenario", "honest"),
+            options.get("target", 0),
+        )
+    )
 
 
 def main() -> None:

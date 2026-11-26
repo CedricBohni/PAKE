@@ -5,18 +5,27 @@ import socket
 import time
 
 from fapake.ot import OTOffer, OTReply, RSAPublicKey
-from fapake.protocol import (DEFAULT_PARAMS, DEMO_PARAMS, AuthChallenge, AuthResult, ClientSession,
-                             Params, ProtocolError, parse_password)
+from fapake.protocol import (
+    DEFAULT_PARAMS,
+    DEMO_PARAMS,
+    AuthChallenge,
+    AuthResult,
+    ClientSession,
+    Params,
+    ProtocolError,
+    parse_password,
+)
 from fapake.wire import WireError, recv_message, send_message
 
 
 class Client:
     """
-       A client class to handle user registration and authentication with a server.
+    A client class to handle user registration and authentication with a server.
     """
 
-    def __init__(self, host: str = '127.0.0.1', port: int = 65432, params: Params = DEFAULT_PARAMS,
-                 timeout: float = 30.0) -> None:
+    def __init__(
+        self, host: str = "127.0.0.1", port: int = 65432, params: Params = DEFAULT_PARAMS, timeout: float = 30.0
+    ) -> None:
         self.host = host
         self.port = port
         self.params = params
@@ -46,9 +55,14 @@ class Client:
         session = ClientSession(password, self.params)
         with self._connect() as sock:
             data = self._request(sock, {"action": "authenticate", "username": username})
-            offer = session.begin(AuthChallenge(
-                group=data["group"], cipher=data["cipher"], offer=OTOffer(data["x0"], data["x1"]),
-                ot_key=RSAPublicKey(data["ot_n"], data["ot_e"])))
+            offer = session.begin(
+                AuthChallenge(
+                    group=data["group"],
+                    cipher=data["cipher"],
+                    offer=OTOffer(data["x0"], data["x1"]),
+                    ot_key=RSAPublicKey(data["ot_n"], data["ot_e"]),
+                )
+            )
 
             while not session.done:
                 index, v = session.next_query(offer)
@@ -99,8 +113,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Fuzzy aPAKE demo client")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=65432)
-    parser.add_argument("--demo", action="store_true",
-                        help="use the tiny insecure demo group (must match the server)")
+    parser.add_argument("--demo", action="store_true", help="use the tiny insecure demo group (must match the server)")
     args = parser.parse_args()
     try:
         Client(args.host, args.port, DEMO_PARAMS if args.demo else DEFAULT_PARAMS).start()

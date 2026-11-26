@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "repeats": 5,
+    "python": "3.15.2",
+    "machine": "Windows AMD64"
+  },
+  "rows": [
+    {
+      "group": "modp2048",
+      "group_bits": 2048,
+      "ot_key_bits": 3072,
+      "n": 8,
+      "t": 6,
+      "e": 1,
+      "subsets": 28,
+      "register_ms": 1052.6,
+      "server_ms": 372.8,
+      "ot_ms": 745.3,
+      "finish_ms": 211.1,
+      "login_ms": 1329.2
+    },
+    {
+      "group": "modp2048",
+      "group_bits": 2048,
+      "ot_key_bits": 3072,
+      "n": 10,
+      "t": 6,
+      "e": 2,
+      "subsets": 210,
+      "register_ms": 1390.5,
+      "server_ms": 425.7,
+      "ot_ms": 837.2,
+      "finish_ms": 1201.5,
+      "login_ms": 2464.4
+    },
+    {
+      "group": "modp2048",
+      "group_bits": 2048,
+      "ot_key_bits": 3072,
+      "n": 12,
+      "t": 8,
+      "e": 2,
+      "subsets": 495,
+      "register_ms": 988.3,
+      "server_ms": 420.5,
+      "ot_ms": 856.5,
+      "finish_ms": 4350.2,
+      "login_ms": 5627.2
+    },
+    {
+      "group": "modp2048",
+      "group_bits": 2048,
+      "ot_key_bits": 3072,
+      "n": 12,
+      "t": 6,
+      "e": 3,
+      "subsets": 924,
+      "register_ms": 1032.2,
+      "server_ms": 367.9,
+      "ot_ms": 812.9,
+      "finish_ms": 5327.4,
+      "login_ms": 6508.2
+    },
+    {
+      "group": "modp2048",
+      "group_bits": 2048,
+      "ot_key_bits": 3072,
+      "n": 16,
+      "t": 12,
+      "e": 2,
+      "subsets": 1820,
+      "register_ms": 897.2,
+      "server_ms": 487.0,
+      "ot_ms": 1063.8,
+      "finish_ms": 25734.2,
+      "login_ms": 27285.0
+    },
+    {
+      "group": "demo",
+      "group_bits": 18,
+      "ot_key_bits": 1024,
+      "n": 8,
+      "t": 6,
+      "e": 1,
+      "subsets": 28,
+      "register_ms": 0.1,
+      "server_ms": 0.1,
+      "ot_ms": 32.1,
+      "finish_ms": 0.5,
+      "login_ms": 32.7
+    }
+  ]
+}

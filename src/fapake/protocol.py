@@ -33,8 +33,7 @@ from cryptography.exceptions import InvalidTag
 
 from fapake.ic import decrypt, encrypt
 from fapake.modmath import DEFAULT_GROUP, DEMO_GROUP, Group, ModularArithmetic
-from fapake.ot import (OTOffer, OTReceiver, OTReply, OTSender, RSAKeyPair, RSAPublicKey,
-                       generate_key, key_bits_for)
+from fapake.ot import OTOffer, OTReceiver, OTReply, OTSender, RSAKeyPair, RSAPublicKey, generate_key, key_bits_for
 from fapake.rss import RobustSecretSharing
 
 Password = list[int]
@@ -43,6 +42,7 @@ Password = list[int]
 @dataclass(frozen=True)
 class Params:
     """Protocol parameters. The password has n bits; up to e bit errors are tolerated."""
+
     n: int = 8
     t: int = 6
     e: int = 1
@@ -80,8 +80,11 @@ def parse_password(text: str, length: int = DEFAULT_PARAMS.n) -> Password:
 
 
 def validate_password(password: object, length: int) -> Password:
-    if (not isinstance(password, list) or len(password) != length
-            or any(isinstance(bit, bool) or bit not in (0, 1) for bit in password)):
+    if (
+        not isinstance(password, list)
+        or len(password) != length
+        or any(isinstance(bit, bool) or bit not in (0, 1) for bit in password)
+    ):
         raise ProtocolError(f"password must be a list of {length} bits")
     return password
 
@@ -118,34 +121,38 @@ def random_session_key() -> str:
 
 # --------------------------------------------------------------------------- registration
 
+
 @dataclass
 class UserRecord:
     """What the server stores per user. Contains no plaintext password."""
+
     shares: list[tuple[int, int]]
     pw: int  # g^pw
-    k: int   # g^k
+    k: int  # g^k
     group: str = DEFAULT_GROUP.name
 
     def to_dict(self) -> dict:
-        return {"group": self.group, "shares": [list(pair) for pair in self.shares],
-                "pw": self.pw, "k": self.k}
+        return {"group": self.group, "shares": [list(pair) for pair in self.shares], "pw": self.pw, "k": self.k}
 
     @classmethod
     def from_dict(cls, data: dict) -> UserRecord:
-        return cls([tuple(pair) for pair in data["shares"]], data["pw"], data["k"],
-                   data.get("group", DEMO_GROUP.name))  # records from before groups existed
+        return cls(
+            [tuple(pair) for pair in data["shares"]], data["pw"], data["k"], data.get("group", DEMO_GROUP.name)
+        )  # records from before groups existed
 
 
 @dataclass(frozen=True)
 class RegistrationSecrets:
     """Values the server uses during registration and then forgets. Exposed for the visualizer."""
-    k: int                       # the secret, in Z_q
-    k_shares: list[int]          # Shamir shares of k, in Z_q
-    decoy_exponents: list[int]   # r_i with decoy = g^{r_i}
+
+    k: int  # the secret, in Z_q
+    k_shares: list[int]  # Shamir shares of k, in Z_q
+    decoy_exponents: list[int]  # r_i with decoy = g^{r_i}
 
 
-def register_with_details(password: Password,
-                          params: Params = DEFAULT_PARAMS) -> tuple[UserRecord, RegistrationSecrets]:
+def register_with_details(
+    password: Password, params: Params = DEFAULT_PARAMS
+) -> tuple[UserRecord, RegistrationSecrets]:
     """Like register(), but also returns the intermediate secrets."""
     validate_password(password, params.n)
     math = ModularArithmetic(params.group)
@@ -177,9 +184,11 @@ def register(password: Password, params: Params = DEFAULT_PARAMS) -> UserRecord:
 
 # --------------------------------------------------------------------------- authentication
 
+
 @dataclass(frozen=True)
 class AuthChallenge:
     """The server's first authentication message."""
+
     group: str
     cipher: str  # JSON blob from ic.encrypt
     offer: OTOffer
@@ -191,8 +200,7 @@ class ServerSession:
 
     def __init__(self, record: UserRecord, ot_key: RSAKeyPair, params: Params = DEFAULT_PARAMS) -> None:
         if record.group != params.group.name:
-            raise ProtocolError(f"user was registered with group '{record.group}', "
-                                f"server uses '{params.group.name}'")
+            raise ProtocolError(f"user was registered with group '{record.group}', server uses '{params.group.name}'")
         if ot_key.N <= params.group.p:
             raise ValueError("OT key modulus must be larger than the group prime")
 
@@ -203,14 +211,14 @@ class ServerSession:
         r = self.math.generate_random_int(sub=True)
         r_shares = rss.generate_shares(r)
         self.r, self.r_shares = r, r_shares  # kept for inspection (visualizer, tests)
-        self.randomized_key = self.math.modular_multiplication(
-            record.k, self.math.modular_generator_exponentiation(r))
+        self.randomized_key = self.math.modular_multiplication(record.k, self.math.modular_generator_exponentiation(r))
 
         self.shares: list[tuple[int, int]] = []
         for (zero, one), r_share in zip(record.shares, r_shares):
             mask = self.math.modular_generator_exponentiation(r_share)
-            self.shares.append((self.math.modular_multiplication(zero, mask),
-                                self.math.modular_multiplication(one, mask)))
+            self.shares.append(
+                (self.math.modular_multiplication(zero, mask), self.math.modular_multiplication(one, mask))
+            )
 
         payload = json.dumps({"shares": [list(pair) for pair in self.shares], "pw": record.pw})
         self._cipher = encrypt(self.randomized_key, payload)
@@ -259,8 +267,7 @@ class ClientSession:
     def begin(self, challenge: AuthChallenge) -> OTOffer:
         """Accept the server's challenge. Returns the offer for the first OT round."""
         if challenge.group != self.params.group.name:
-            raise ProtocolError(f"server uses group '{challenge.group}', "
-                                f"client uses '{self.params.group.name}'")
+            raise ProtocolError(f"server uses group '{challenge.group}', client uses '{self.params.group.name}'")
         if challenge.ot_key.N <= self.params.group.p:
             raise ProtocolError("server's OT key is too small for this group")
         self._ot = OTReceiver(challenge.ot_key)
@@ -299,13 +306,14 @@ class ClientSession:
             return AuthResult(random_session_key(), False, ["decryption failed: wrong key"])
 
         reasons = []
-        close = {self.math.modular_generator_exponentiation(password_to_int(pw))
-                 for pw in passwords_within_distance(self.password, self.params.e)}
+        close = {
+            self.math.modular_generator_exponentiation(password_to_int(pw))
+            for pw in passwords_within_distance(self.password, self.params.e)
+        }
         if data["pw"] not in close:
             reasons.append("password is not within the allowed Hamming distance")
 
-        if any(share != pair[bit] for share, pair, bit
-               in zip(self.received, data["shares"], self.password)):
+        if any(share != pair[bit] for share, pair, bit in zip(self.received, data["shares"], self.password)):
             reasons.append("shares from OT differ from the encrypted shares: file has been tampered with")
 
         if reasons:
@@ -321,8 +329,9 @@ def run_ot_rounds(server: ServerSession, client: ClientSession) -> None:
         offer = client.receive(server.respond_ot(index, v))
 
 
-def authenticate_locally(record: UserRecord, password: Password, params: Params = DEFAULT_PARAMS,
-                         ot_key: RSAKeyPair | None = None) -> tuple[ServerSession, AuthResult]:
+def authenticate_locally(
+    record: UserRecord, password: Password, params: Params = DEFAULT_PARAMS, ot_key: RSAKeyPair | None = None
+) -> tuple[ServerSession, AuthResult]:
     """Run a full authentication in memory. Useful for tests, demos and benchmarks.
 
     Generating an OT key is slow for the default group, so pass one in when calling repeatedly.

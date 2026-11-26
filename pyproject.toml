@@ -1,12 +1,27 @@
 [project]
 name = "fapake"
 version = "0.1.0"
-description = "Fuzzy asymmetric password-authenticated key exchange (fuzzy aPAKE) with robust secret sharing and oblivious transfer"
+description = "Fuzzy asymmetric password-authenticated key exchange (fuzzy aPAKE): log in with a password that is almost right, using robust secret sharing and oblivious transfer."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Cedric Bohni" }]
+keywords = ["cryptography", "pake", "apake", "fuzzy-pake", "secret-sharing", "oblivious-transfer", "key-exchange"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security :: Cryptography",
+]
 requires-python = ">=3.11"
 dependencies = [
     "cryptography>=50.0.2",
 ]
+
+[project.urls]
+Demo = "https://cedricbohni.github.io/PAKE/"
+Repository = "https://github.com/CedricBohni/PAKE"
 
 [project.scripts]
 fapake-server = "fapake.server:main"
@@ -14,7 +29,9 @@ fapake-client = "fapake.client:main"
 
 [dependency-groups]
 dev = [
+    "matplotlib>=3.11.2",
     "pytest>=9.2.0",
+    "ruff>=0.8",
     "sympy>=1.14.0",
 ]
 
@@ -24,4 +41,18 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-ra"
 markers = ["slow: uses the real 2048-bit group (deselect with -m 'not slow')"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+# Early experiments, kept as they were written.
+extend-exclude = ["development"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "B905", # zip() without strict=: some zips compare against data a peer sent, where a length
+            # mismatch must fail the login, not raise
+]

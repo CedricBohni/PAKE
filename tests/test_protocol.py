@@ -1,9 +1,20 @@
 import pytest
 
-from fapake.ot import generate_key
-from fapake.protocol import (DEFAULT_PARAMS, DEMO_PARAMS, ClientSession, Params, ProtocolError,
-                             ServerSession, UserRecord, authenticate_locally, hamming_distance,
-                             parse_password, passwords_within_distance, register, run_ot_rounds)
+from fapake.protocol import (
+    DEFAULT_PARAMS,
+    DEMO_PARAMS,
+    ClientSession,
+    Params,
+    ProtocolError,
+    ServerSession,
+    UserRecord,
+    authenticate_locally,
+    hamming_distance,
+    parse_password,
+    passwords_within_distance,
+    register,
+    run_ot_rounds,
+)
 
 PASSWORD = [1, 0, 1, 0, 1, 0, 1, 0]
 
@@ -23,8 +34,10 @@ def record():
 @pytest.fixture
 def auth(demo_key):
     """authenticate_locally on the demo group with the shared test key."""
+
     def run(record, password, params=DEMO_PARAMS):
         return authenticate_locally(record, password, params, demo_key)
+
     return run
 
 
@@ -192,17 +205,22 @@ def test_larger_tolerance(auth):
 
 # ----------------------------------------------------------------- the real 2048-bit group
 
+
 @pytest.fixture(scope="module")
 def secure_record():
     return register(PASSWORD, DEFAULT_PARAMS)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("password, should_match", [
-    (PASSWORD, True),
-    (flip(PASSWORD, 5), True),
-    (flip(PASSWORD, 0, 6), False),
-], ids=["exact", "one-bit-off", "two-bits-off"])
+@pytest.mark.parametrize(
+    "password, should_match",
+    [
+        (PASSWORD, True),
+        (flip(PASSWORD, 5), True),
+        (flip(PASSWORD, 0, 6), False),
+    ],
+    ids=["exact", "one-bit-off", "two-bits-off"],
+)
 def test_secure_group(secure_record, secure_key, password, should_match):
     assert secure_key.N.bit_length() == 3072
     server, result = authenticate_locally(secure_record, password, DEFAULT_PARAMS, secure_key)
